@@ -46,10 +46,15 @@ export default function DiaryHistoryPage() {
     Taro.navigateTo({ url: `/pages/diary-detail/index?id=${id}` });
   };
 
+  /**
+   * 解析日记日期字符串
+   * [BUG FIX] YYYY-MM-DD格式在new Date()中会被解析为UTC时间，
+   * 导致东八区用户看到的日期可能偏差一天。
+   * 修复：手动解析年月日，使用本地时区构造Date对象。
+   */
   const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const d = new Date(year, month - 1, day); // 本地时区
     const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
     const weekday = weekdays[d.getDay()];
     return { month: `${month}月`, day: `${day}`, weekday: `周${weekday}` };

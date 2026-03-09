@@ -1,18 +1,16 @@
-/**
- * 个人中心页样式
- * - 用户信息卡片（渐变头像）
- * - 三列数据统计栏
- * - 菜单列表（支持分隔线）
- * - 修改密码弹窗
- */
+// 个人中心页样式 - v1.2 移动端适配优化
+// 修复：安全区域、触摸目标、弹窗键盘适配
+
 .profile-page {
   min-height: 100vh;
+  min-height: var(--vh-full, 100vh);
   background-color: var(--color-bg);
-  padding-bottom: calc(80px + var(--safe-bottom));
+  // TabBar页面底部安全区域
+  padding-bottom: calc(80px + var(--safe-bottom, 0px));
 
   // 用户信息卡片
   .user-card {
-    padding: 80px var(--spacing-lg) 24px;
+    padding: calc(60px + var(--safe-top, 0px)) var(--spacing-lg) 24px;
     text-align: center;
 
     .avatar {
@@ -81,6 +79,7 @@
       width: 1px;
       height: 32px;
       background-color: var(--color-border);
+      flex-shrink: 0;
     }
   }
 
@@ -93,7 +92,6 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   }
 
-  // 菜单分隔线 - 用于分组
   .menu-divider {
     height: 8px;
     background-color: var(--color-bg);
@@ -105,6 +103,8 @@
     justify-content: space-between;
     padding: 16px 20px;
     border-bottom: 1px solid var(--color-border);
+    // 确保触摸目标足够大
+    min-height: 52px;
 
     &:last-child { border-bottom: none; }
     &:active { background-color: var(--color-card); }
@@ -129,6 +129,11 @@
       .menu-hint {
         font-size: 13px;
         color: var(--color-text-hint);
+        // 防止长文本溢出
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .menu-arrow {
@@ -147,6 +152,11 @@
       text-align: center;
       border: 1px solid var(--color-border);
       border-radius: var(--radius-md);
+      // 确保触摸目标足够大
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       &:active { opacity: 0.7; }
 
@@ -181,14 +191,20 @@
     justify-content: center;
     z-index: 1000;
     animation: fadeIn 0.2s ease;
+    padding: var(--safe-top, 0px) var(--safe-left, 0px) var(--safe-bottom, 0px) var(--safe-right, 0px);
   }
 
   .pin-change-modal {
     width: 300px;
+    max-width: calc(100vw - 48px);
     background: var(--color-bg);
     border-radius: var(--radius-lg);
     padding: 32px 24px;
     text-align: center;
+    // 防止键盘弹出时弹窗溢出
+    max-height: calc(100vh - 100px);
+    max-height: calc(var(--vh-full, 100vh) - 100px);
+    overflow-y: auto;
 
     .pin-change-title {
       display: block;
@@ -241,6 +257,11 @@
         padding: 10px 0;
         border-radius: 24px;
         text-align: center;
+        // 确保触摸目标足够大
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         &.cancel {
           background: var(--color-card);
@@ -258,6 +279,19 @@
         }
 
         &:active { opacity: 0.8; }
+      }
+    }
+  }
+}
+
+// ===== 小屏适配 =====
+@media screen and (max-width: 350px) {
+  .profile-page {
+    .stats-bar {
+      padding: 16px 12px;
+
+      .stat-item .stat-value {
+        font-size: 20px;
       }
     }
   }

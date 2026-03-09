@@ -77,8 +77,11 @@ const GUIDE_STEPS = [
   },
 ];
 
-/** 获取今天的日期字符串 YYYY-MM-DD */
-const getTodayStr = () => new Date().toISOString().split('T')[0];
+/** 获取今天的日期字符串 YYYY-MM-DD（使用本地时区，避免UTC时差问题） */
+const getTodayStr = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
 
 /** 本地草稿的localStorage key */
 const getDraftKey = () => `diary_draft_${getTodayStr()}`;

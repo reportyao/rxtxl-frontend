@@ -1,17 +1,22 @@
+// 打卡日历页样式 - v1.2 移动端适配优化
+// 修复：安全区域、触摸目标、小屏日历适配
+
 .calendar-page {
   min-height: 100vh;
+  min-height: var(--vh-full, 100vh);
   background-color: var(--color-bg);
-  padding-bottom: calc(40px + var(--safe-bottom));
+  padding-bottom: calc(40px + var(--safe-bottom, 0px));
 
   .page-header {
-    padding: 60px var(--spacing-lg) 16px;
+    padding: calc(40px + var(--safe-top, 0px)) var(--spacing-lg) 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
 
     .nav-back {
-      width: 36px;
-      height: 36px;
+      // 增大触摸目标到 44x44
+      width: 44px;
+      height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -26,7 +31,7 @@
       letter-spacing: 2px;
     }
 
-    .placeholder { width: 36px; }
+    .placeholder { width: 44px; }
   }
 
   // 醒目的连续打卡天数展示
@@ -119,8 +124,9 @@
     margin-bottom: 20px;
 
     .month-arrow {
-      width: 32px;
-      height: 32px;
+      // 增大触摸目标到 44x44
+      width: 44px;
+      height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -226,6 +232,31 @@
       color: var(--color-text-secondary);
       line-height: 1.8;
       letter-spacing: 1px;
+    }
+  }
+}
+
+// ===== 小屏适配 =====
+@media screen and (max-width: 350px) {
+  .calendar-page {
+    .streak-hero .streak-number {
+      font-size: 36px;
+    }
+
+    .stat-card {
+      padding: 12px 4px;
+
+      .stat-number {
+        font-size: 22px;
+      }
+
+      .stat-label {
+        font-size: 10px;
+      }
+    }
+
+    .day-cell .day-number {
+      font-size: 12px;
     }
   }
 }

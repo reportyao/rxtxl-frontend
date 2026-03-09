@@ -1,10 +1,17 @@
+// PIN码设置页样式 - v1.2 移动端适配优化
+// 修复：安全区域、100vh问题、键盘弹出适配、触摸目标
+
 .pin-setup-page {
   min-height: 100vh;
+  min-height: var(--vh-full, 100vh);
   background-color: var(--color-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 var(--spacing-lg);
+  padding: var(--safe-top, 0px) var(--spacing-lg) var(--safe-bottom, 0px);
+  box-sizing: border-box;
+  // 键盘弹出时允许滚动
+  overflow-y: auto;
 
   .step-content {
     width: 100%;
@@ -41,6 +48,9 @@
     padding: 24px;
     background-color: var(--color-card);
     border-radius: var(--radius-md);
+    // 确保不溢出
+    max-width: 100%;
+    box-sizing: border-box;
 
     .desc-text {
       display: block;
@@ -103,6 +113,8 @@
     background-color: #FFF8F5;
     border: 1px solid rgba(200, 75, 49, 0.15);
     border-radius: var(--radius-md);
+    max-width: 100%;
+    box-sizing: border-box;
 
     .warning-text {
       font-size: 14px;
@@ -111,7 +123,7 @@
     }
   }
 
-  // 按钮
+  // 按钮 - 确保触摸目标足够大
   .next-btn, .confirm-btn {
     width: 100%;
     padding: 16px;
@@ -119,6 +131,10 @@
     border-radius: 12px;
     text-align: center;
     transition: all 0.3s ease;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:active {
       opacity: 0.85;
@@ -139,11 +155,62 @@
 
   .back-link {
     margin-top: 24px;
+    // 确保触摸目标足够大
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &-text {
       font-size: 14px;
       color: var(--color-text-secondary);
       text-decoration: underline;
+    }
+  }
+}
+
+// ===== 键盘弹出时适配 =====
+@media screen and (max-height: 500px) {
+  .pin-setup-page {
+    .lock-icon, .warning-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .step-title {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .step-hint {
+      margin-bottom: 24px;
+    }
+
+    .security-desc {
+      margin: 12px 0 24px;
+      padding: 16px;
+    }
+
+    .pin-dots {
+      margin-bottom: 24px;
+    }
+
+    .warning-box {
+      margin-bottom: 24px;
+      padding: 16px;
+    }
+  }
+}
+
+// ===== 小屏适配 =====
+@media screen and (max-width: 350px) {
+  .pin-setup-page {
+    .step-title {
+      font-size: 20px;
+    }
+
+    .pin-dots {
+      gap: 16px;
     }
   }
 }

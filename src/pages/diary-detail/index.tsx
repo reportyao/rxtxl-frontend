@@ -6,14 +6,20 @@ import { useAppStore } from '../../store';
 import { deriveKey, decrypt, hashPin } from '../../utils/crypto';
 import './index.scss';
 
+/**
+ * [BUG FIX] 原来的STEP_LABELS的key与日记页的GUIDE_STEPS id不匹配。
+ * GUIDE_STEPS使用的id是: event, reaction, greed, fear, excuse, stone, choice
+ * 原来的key是: event, emotion, thought, fear, desire, stone, insight
+ * 导致解密后显示的标签大部分为原始key而非可读文本。
+ */
 const STEP_LABELS: Record<string, string> = {
-  event: '河面上飘过了什么',
-  emotion: '河水是什么颜色',
-  thought: '水面之下的念头',
-  fear: '深处的恐惧',
-  desire: '真正的渴望',
-  stone: '捞到的石头',
-  insight: '对自己说的话',
+  event: '今天，什么事让你的河面起了波澜',
+  reaction: '那一刻，你的第一反应是什么',
+  greed: '你其实想得到什么',
+  fear: '你其实在害怕什么',
+  excuse: '你给这件事找了什么理由',
+  stone: '今天捞出来的石头',
+  choice: '明天再遇到，你准备怎么选',
 };
 
 interface DiaryData {
@@ -102,9 +108,12 @@ export default function DiaryDetailPage() {
     }
   };
 
+  /**
+   * [BUG FIX] YYYY-MM-DD格式在new Date()中被解析为UTC，东八区可能偏差一天
+   */
   const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return `${year}年${month}月${day}日`;
   };
 
   if (loading) {

@@ -8,10 +8,10 @@
  * - 金句长按/点击生成分享卡片
  * - 文章富文本内容渲染
  *
- * 交互细节：
- * - 点击屏幕中央1/3区域切换导航栏显示
- * - 左滑 = 下一章，右滑 = 上一章
- * - 金句区域可点击跳转到分享卡片页面
+ * v1.1 优化：
+ * - [BUG FIX] 使用API返回的prevArticle/nextArticle替代全量列表请求
+ * - [性能] 减少一次不必要的API请求（原来请求pageSize=999的全量文章列表）
+ * - [BUG FIX] 切换章节时滚动到顶部
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
@@ -28,6 +28,8 @@ interface ArticleDetail {
   publishedAt: string;
   viewCount: number;
   quotes: string[];
+  prevArticle?: { id: string; title: string; chapter: number } | null;
+  nextArticle?: { id: string; title: string; chapter: number } | null;
 }
 
 /** 滑动手势的最小触发距离（像素） */
@@ -39,38 +41,39 @@ export default function ArticleDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showNav, setShowNav] = useState(true);       // 是否显示导航栏
   const [showShareTip, setShowShareTip] = useState(false);
-  const [allArticleIds, setAllArticleIds] = useState<{id: string; chapter: number}[]>([]);
+  const [scrollTop, setScrollTop] = useState(0);
 
   // 触摸滑动相关
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
+
+  // 防止组件卸载后setState
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   /** 获取文章详情 */
   const fetchArticle = useCallback(async (id: string) => {
     try {
       setLoading(true);
       const res = await api.get(`/api/articles/${id}`);
+      if (!mountedRef.current) return;
       if (res.code === 0) {
         setArticle(res.data);
+        // 切换章节后滚动到顶部
+        setScrollTop(prev => prev === 0 ? 0.01 : 0);
       } else {
         Taro.showToast({ title: '文章不存在', icon: 'none' });
       }
     } catch (err) {
+      if (!mountedRef.current) return;
       Taro.showToast({ title: '加载失败', icon: 'none' });
     } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  /** 获取所有文章ID列表（用于章节切换） */
-  const fetchArticleList = useCallback(async () => {
-    try {
-      const res = await api.get('/api/articles', { page: 1, pageSize: 999 });
-      if (res.code === 0 && res.data.list) {
-        setAllArticleIds(res.data.list.map((a: any) => ({ id: a.id, chapter: a.chapter })));
+      if (mountedRef.current) {
+        setLoading(false);
       }
-    } catch (err) {
-      // 静默失败，不影响阅读
     }
   }, []);
 
@@ -78,33 +81,25 @@ export default function ArticleDetailPage() {
     const id = router.params.id;
     if (id) {
       fetchArticle(id);
-      fetchArticleList();
     }
   }, []);
 
   /**
    * 切换到指定方向的章节
-   * @param direction - 'prev' 上一章 | 'next' 下一章
+   * [优化] 直接使用API返回的prevArticle/nextArticle，无需请求全量列表
    */
   const switchChapter = (direction: 'prev' | 'next') => {
-    if (!article || allArticleIds.length === 0) return;
+    if (!article) return;
 
-    const currentIndex = allArticleIds.findIndex(a => a.id === article.id);
-    if (currentIndex === -1) return;
+    const target = direction === 'prev' ? article.prevArticle : article.nextArticle;
 
-    // 列表是倒序的（最新在前），所以 prev = index+1, next = index-1
-    const targetIndex = direction === 'next' ? currentIndex - 1 : currentIndex + 1;
-
-    if (targetIndex < 0) {
-      Taro.showToast({ title: '已是最新章节', icon: 'none', duration: 1500 });
-      return;
-    }
-    if (targetIndex >= allArticleIds.length) {
-      Taro.showToast({ title: '已是第一章', icon: 'none', duration: 1500 });
+    if (!target) {
+      const msg = direction === 'prev' ? '已是第一章' : '已是最新章节';
+      Taro.showToast({ title: msg, icon: 'none', duration: 1500 });
       return;
     }
 
-    fetchArticle(allArticleIds[targetIndex].id);
+    fetchArticle(target.id);
   };
 
   /** 触摸开始 */
@@ -211,6 +206,7 @@ export default function ArticleDetailPage() {
       <ScrollView
         className='article-scroll'
         scrollY
+        scrollTop={scrollTop}
         onClick={handleContentTap}
       >
         {/* 文章头部信息 */}
@@ -250,6 +246,28 @@ export default function ArticleDetailPage() {
             ))}
           </View>
         )}
+
+        {/* 章节切换按钮 */}
+        <View className='chapter-nav'>
+          {article.prevArticle ? (
+            <View className='chapter-nav-btn' onClick={() => switchChapter('prev')}>
+              <Text className='chapter-nav-btn-text'>← 上一章：{article.prevArticle.title}</Text>
+            </View>
+          ) : (
+            <View className='chapter-nav-btn disabled'>
+              <Text className='chapter-nav-btn-text'>已是第一章</Text>
+            </View>
+          )}
+          {article.nextArticle ? (
+            <View className='chapter-nav-btn' onClick={() => switchChapter('next')}>
+              <Text className='chapter-nav-btn-text'>下一章：{article.nextArticle.title} →</Text>
+            </View>
+          ) : (
+            <View className='chapter-nav-btn disabled'>
+              <Text className='chapter-nav-btn-text'>已是最新章节</Text>
+            </View>
+          )}
+        </View>
 
         {/* 章节切换提示 */}
         <View className='chapter-nav-hint'>

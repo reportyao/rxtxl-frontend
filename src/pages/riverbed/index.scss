@@ -1,9 +1,13 @@
+// 石头收藏馆（河床）页样式 - v1.2 移动端适配优化
+// 修复：安全区域、100vh问题、触摸目标、弹窗适配
+
 .riverbed-page {
   min-height: 100vh;
+  min-height: var(--vh-full, 100vh);
   background-color: var(--color-bg);
 
   .page-header {
-    padding: 60px var(--spacing-lg) 16px;
+    padding: calc(40px + var(--safe-top, 0px)) var(--spacing-lg) 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -27,12 +31,15 @@
   .canvas-container {
     padding: 16px;
     height: calc(100vh - 200px);
+    height: calc(var(--vh-full, 100vh) - 200px);
 
     .riverbed-canvas {
       width: 100%;
       height: 100%;
       border-radius: var(--radius-lg);
       cursor: pointer;
+      // 防止Canvas在某些浏览器中模糊
+      image-rendering: -webkit-optimize-contrast;
     }
   }
 
@@ -42,6 +49,7 @@
     align-items: center;
     justify-content: center;
     height: 60vh;
+    height: 60dvh;
 
     .loading-text {
       font-family: var(--font-serif);
@@ -58,6 +66,7 @@
     align-items: center;
     justify-content: center;
     height: 60vh;
+    height: 60dvh;
     text-align: center;
     padding: 0 var(--spacing-lg);
 
@@ -85,6 +94,11 @@
       padding: 12px 32px;
       background-color: var(--color-primary);
       border-radius: 24px;
+      // 确保触摸目标足够大
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       &:active { opacity: 0.85; transform: scale(0.96); }
 
@@ -108,7 +122,7 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 0 var(--spacing-lg);
+    padding: var(--safe-top, 0px) var(--spacing-lg) var(--safe-bottom, 0px);
 
     .modal-content {
       width: 100%;
@@ -117,6 +131,10 @@
       border-radius: var(--radius-lg);
       padding: 32px 24px;
       text-align: center;
+      // 限制最大高度，防止内容过多溢出
+      max-height: calc(100vh - 100px);
+      max-height: calc(var(--vh-full, 100vh) - 100px);
+      overflow-y: auto;
     }
 
     .modal-stone-emoji {
@@ -132,6 +150,8 @@
       color: var(--color-stone);
       margin-bottom: 8px;
       letter-spacing: 1px;
+      // 防止长名称溢出
+      word-break: break-word;
     }
 
     .modal-stone-count {
@@ -174,7 +194,12 @@
       padding: 10px 32px;
       border: 1px solid var(--color-border);
       border-radius: 24px;
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      // 确保触摸目标足够大
+      min-height: 44px;
+      min-width: 100px;
 
       &:active { opacity: 0.7; }
 
@@ -182,6 +207,15 @@
         font-size: 14px;
         color: var(--color-text-secondary);
       }
+    }
+  }
+}
+
+// ===== 小屏适配 =====
+@media screen and (max-width: 350px) {
+  .riverbed-page {
+    .page-header .page-title {
+      font-size: 18px;
     }
   }
 }

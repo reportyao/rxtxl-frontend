@@ -116,6 +116,17 @@ export default defineConfig({
     /** 静态资源目录名 */
     staticDirectory: 'static',
 
+    /**
+     * HTML模板配置
+     * - viewport-fit=cover: 启用安全区域适配（iPhone X+刘海屏必须）
+     * - maximum-scale=1.0, user-scalable=no: 禁止双指缩放
+     */
+    htmlPluginOption: {
+      templateParameters: {
+        viewport: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover',
+      },
+    },
+
     /** 需要经过Babel编译的node_modules包（解决ES6+兼容性问题） */
     esnextModules: ['taro-ui'],
 

@@ -1,16 +1,21 @@
+// 日记详情页样式 - v1.2 移动端适配优化
+// 修复：安全区域、100vh问题、触摸目标、弹窗键盘适配、文本溢出
+
 .diary-detail-page {
   min-height: 100vh;
+  min-height: var(--vh-full, 100vh);
   background-color: var(--color-bg);
 
   .page-header {
-    padding: 60px var(--spacing-lg) 16px;
+    padding: calc(40px + var(--safe-top, 0px)) var(--spacing-lg) 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
 
     .nav-back {
-      width: 36px;
-      height: 36px;
+      // 增大触摸目标到 44x44
+      width: 44px;
+      height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -25,13 +30,14 @@
       letter-spacing: 1px;
     }
 
-    .placeholder { width: 36px; }
+    .placeholder { width: 44px; }
   }
 
   .detail-content {
     height: calc(100vh - 100px);
+    height: calc(var(--vh-full, 100vh) - 100px);
     padding: 0 var(--spacing-lg);
-    padding-bottom: calc(40px + var(--safe-bottom));
+    padding-bottom: calc(40px + var(--safe-bottom, 0px));
   }
 
   // 主石头展示
@@ -53,6 +59,9 @@
       font-size: 20px;
       color: var(--color-stone);
       letter-spacing: 2px;
+      // 防止长石头名称溢出
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
   }
 
@@ -78,6 +87,9 @@
         font-size: 16px;
         color: var(--color-text);
         line-height: 1.8;
+        // 防止长文本溢出
+        word-break: break-word;
+        overflow-wrap: break-word;
       }
     }
   }
@@ -115,6 +127,12 @@
       background-color: var(--color-primary);
       border-radius: 24px;
       transition: all 0.3s ease;
+      // 确保触摸目标足够大
+      min-height: 44px;
+      min-width: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       &:active { opacity: 0.85; transform: scale(0.96); }
 
@@ -139,15 +157,21 @@
     justify-content: center;
     z-index: 1000;
     animation: fadeIn 0.2s ease;
+    padding: var(--safe-top, 0px) var(--safe-left, 0px) var(--safe-bottom, 0px) var(--safe-right, 0px);
   }
 
   .pin-modal {
     width: 300px;
+    max-width: calc(100vw - 48px);
     background: var(--color-bg);
     border-radius: 16px;
     padding: 32px 24px;
     text-align: center;
     animation: slideUp 0.3s ease;
+    // 防止键盘弹出时弹窗溢出
+    max-height: calc(100vh - 100px);
+    max-height: calc(var(--vh-full, 100vh) - 100px);
+    overflow-y: auto;
 
     .pin-modal-title {
       display: block;
@@ -196,7 +220,7 @@
     .pin-error {
       display: block;
       font-size: 13px;
-      color: var(--color-danger);
+      color: var(--color-accent);
       margin-bottom: 8px;
     }
 
@@ -210,6 +234,11 @@
         padding: 10px 0;
         border-radius: 8px;
         background: var(--color-card);
+        // 确保触摸目标足够大
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         &:active { opacity: 0.7; }
 
         &-text {
@@ -223,6 +252,11 @@
         padding: 10px 0;
         border-radius: 8px;
         background: var(--color-primary);
+        // 确保触摸目标足够大
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         &:active { opacity: 0.85; }
 
         &.disabled {
@@ -243,6 +277,8 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
+    height: var(--vh-full, 100vh);
+    padding-top: var(--safe-top, 0px);
 
     .loading-text, .error-text {
       font-size: 14px;

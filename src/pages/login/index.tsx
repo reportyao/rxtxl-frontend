@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Taro from '@tarojs/taro';
 import { View, Text, Input } from '@tarojs/components';
 import { api } from '../../utils/request';
@@ -17,6 +17,16 @@ export default function LoginPage() {
   const isPhoneValid = /^1[3-9]\d{9}$/.test(phone);
   const isCodeValid = code.length === 6;
 
+  // [BUG FIX] 组件卸载时清除定时器，防止内存泄漏
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
+
   // 发送验证码
   const handleSendCode = async () => {
     if (!isPhoneValid || countdown > 0 || codeSending) return;
@@ -32,12 +42,16 @@ export default function LoginPage() {
           setCode(res.data.devCode);
         }
 
-        // 开始倒计时
+        // 开始倒计时（先清除可能存在的旧定时器）
+        if (timerRef.current) clearInterval(timerRef.current);
         setCountdown(60);
         timerRef.current = setInterval(() => {
           setCountdown(prev => {
             if (prev <= 1) {
-              if (timerRef.current) clearInterval(timerRef.current);
+              if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+              }
               return 0;
             }
             return prev - 1;

@@ -1,6 +1,8 @@
+// 首页（路由分发）样式 - v1.2 移动端适配优化
 .index-page {
   width: 100vw;
   height: 100vh;
+  height: var(--vh-full, 100vh);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -27,8 +29,4 @@
     color: var(--color-primary);
     letter-spacing: 4px;
   }
-}
-
-.index-page-config {
-  navigationStyle: 'custom';
 }

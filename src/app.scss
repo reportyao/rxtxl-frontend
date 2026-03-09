@@ -1,5 +1,6 @@
 // ==================== 人选天选论 全局样式 ====================
 // 新中式极简 + 水墨意象
+// v1.2 - 移动端全面适配优化
 
 // ==================== 色彩变量 ====================
 :root {
@@ -33,8 +34,17 @@
   --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', serif;
   --font-sans: 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  // 安全区域
+  // ===== 安全区域变量（兼容所有浏览器） =====
+  --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  // ===== 动态视口高度（解决iOS Safari 100vh问题） =====
+  // 使用 dvh（dynamic viewport height）替代 vh
+  // 当浏览器不支持 dvh 时回退到 vh
+  --vh-full: 100vh;
+  --vh-full: 100dvh;
 }
 
 // ==================== 全局重置 ====================
@@ -46,6 +56,9 @@ page {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  // 防止iOS Safari自动调整文字大小
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 // H5环境下的body重置
@@ -53,6 +66,40 @@ body {
   background-color: var(--color-bg);
   margin: 0;
   padding: 0;
+  // 确保viewport-fit=cover生效
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  padding: 0; // 重置为0，由各页面自行处理安全区域
+  // 防止橡皮筋效果导致的布局问题
+  overscroll-behavior-y: none;
+}
+
+// ==================== H5 viewport适配 ====================
+// 确保 viewport-fit=cover 在 meta 标签中设置
+// <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+// ==================== 全局触摸优化 ====================
+* {
+  // 去除iOS点击高亮
+  -webkit-tap-highlight-color: transparent;
+  // 优化触摸滚动
+  -webkit-overflow-scrolling: touch;
+  // 防止长按弹出菜单
+  -webkit-touch-callout: none;
+}
+
+// 可交互元素恢复触摸反馈
+a, button, [role="button"], .clickable {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+// ==================== 输入框全局优化 ====================
+input, textarea {
+  // 防止iOS输入框缩放
+  font-size: 16px !important;
+  // 去除iOS默认圆角
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
 }
 
 // ==================== 通用工具类 ====================
@@ -68,7 +115,117 @@ body {
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 
+// ==================== 文本溢出保护 ====================
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.text-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// ==================== 安全区域工具类 ====================
+.safe-top {
+  padding-top: var(--safe-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-bottom);
+}
+
+.safe-area-inset {
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+// ==================== 最小触摸目标 ====================
+// Apple HIG 推荐最小 44x44pt
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ==================== 横屏锁定提示 ====================
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .landscape-lock-hint {
+    display: flex !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99999;
+    background: var(--color-bg);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    &::before {
+      content: '📱';
+      font-size: 48px;
+      margin-bottom: 16px;
+      animation: rotateHint 1.5s ease-in-out infinite;
+    }
+
+    &::after {
+      content: '请旋转手机至竖屏模式';
+      font-family: var(--font-serif);
+      font-size: 16px;
+      color: var(--color-text-secondary);
+      letter-spacing: 2px;
+    }
+  }
+}
+
+@keyframes rotateHint {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(90deg); }
+}
+
+// ==================== 小屏适配 ====================
+// 针对 iPhone SE (320px) 等小屏设备
+@media screen and (max-width: 350px) {
+  :root {
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+    --spacing-xxl: 32px;
+  }
+}
+
+// 针对大屏手机 (428px+)
+@media screen and (min-width: 428px) {
+  :root {
+    --spacing-lg: 28px;
+  }
+}
+
 // ==================== 动画 ====================
+// 尊重用户的减少动画偏好设置
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

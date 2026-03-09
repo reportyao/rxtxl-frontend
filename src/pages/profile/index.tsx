@@ -126,10 +126,12 @@ export default function ProfilePage() {
       }
 
       // 提交新密码
+      // [BUG FIX] 原来调用的是 reset-pin 接口，该接口需要手机号+验证码且会清除所有日记。
+      // 修改密码应该使用 set-pin 接口（已通过旧密码验证身份）。
       setChangePinLoading(true);
       try {
         const newPinHash = await hashPin(newPin, user?.salt || '');
-        const res = await api.post('/api/auth/reset-pin', {
+        const res = await api.post('/api/auth/set-pin', {
           pinHash: newPinHash,
           salt: user?.salt || '',
         });

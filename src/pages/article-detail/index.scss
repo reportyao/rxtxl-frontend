@@ -1,19 +1,27 @@
+// 文章详情页样式 - v1.2 移动端适配优化
+// 修复：导航栏安全区域、100vh问题、长文本溢出、图片自适应、触摸目标
+
 .article-detail-page {
   min-height: 100vh;
+  min-height: var(--vh-full, 100vh);
   background-color: var(--color-bg);
-  padding-bottom: calc(40px + var(--safe-bottom));
+  padding-bottom: calc(40px + var(--safe-bottom, 0px));
 
-  // 导航栏 - 沉浸式设计，支持显示/隐藏切换
+  // 导航栏 - 增加安全区域适配
   .nav-bar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 88px;
+    // 高度包含安全区域
+    height: calc(88px + var(--safe-top, 0px));
+    padding-top: var(--safe-top, 0px);
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    padding: 0 var(--spacing-md) 12px;
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+    padding-bottom: 12px;
     background: linear-gradient(to bottom, var(--color-bg) 60%, transparent);
     z-index: 100;
     transition: transform 0.3s ease, opacity 0.3s ease;
@@ -35,20 +43,28 @@
     font-size: 14px;
     color: var(--color-text-secondary);
     letter-spacing: 1px;
+    // 标题过长时截断
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .article-scroll {
     height: 100vh;
+    height: var(--vh-full, 100vh);
   }
 
+  // 导航按钮 - 确保触摸目标足够大
   .nav-back, .nav-share {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     background-color: rgba(247, 244, 237, 0.8);
+    flex-shrink: 0;
 
     &:active { opacity: 0.7; }
   }
@@ -56,9 +72,9 @@
   .back-icon { font-size: 20px; color: var(--color-text); }
   .share-icon { font-size: 18px; color: var(--color-text); }
 
-  // 文章头部
+  // 文章头部 - 考虑导航栏高度和安全区域
   .article-header {
-    padding: 100px var(--spacing-lg) 24px;
+    padding: calc(80px + var(--safe-top, 0px)) var(--spacing-lg) 24px;
     text-align: center;
 
     .article-chapter {
@@ -77,6 +93,9 @@
       line-height: 1.6;
       letter-spacing: 2px;
       margin-bottom: 16px;
+      // 防止长标题溢出
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     .article-meta {
@@ -84,6 +103,7 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      flex-wrap: wrap;
 
       .meta-date, .meta-views, .meta-divider {
         font-size: 12px;
@@ -114,7 +134,7 @@
     }
   }
 
-  // 文章正文
+  // 文章正文 - 增加图片自适应和长文本处理
   .article-content {
     padding: 0 var(--spacing-lg);
     font-family: var(--font-serif);
@@ -122,6 +142,9 @@
     color: var(--color-text);
     line-height: 2;
     letter-spacing: 0.5px;
+    // 防止长单词/URL溢出
+    word-break: break-word;
+    overflow-wrap: break-word;
 
     // 覆盖RichText内部样式
     p {
@@ -159,6 +182,27 @@
     strong {
       color: var(--color-primary);
     }
+
+    // 图片自适应 - 防止图片溢出容器
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--radius-sm);
+    }
+
+    // 表格自适应
+    table {
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+    }
+
+    // 代码块自适应
+    pre, code {
+      max-width: 100%;
+      overflow-x: auto;
+      word-break: break-all;
+    }
   }
 
   // 金句区域
@@ -185,6 +229,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    // 确保触摸目标足够大
+    min-height: 44px;
 
     &:active { opacity: 0.8; }
 
@@ -195,6 +241,9 @@
       color: var(--color-text);
       line-height: 1.6;
       margin-right: 12px;
+      // 防止长金句溢出
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     .quote-share {
@@ -202,6 +251,12 @@
       padding: 4px 12px;
       border: 1px solid var(--color-border);
       border-radius: 16px;
+      // 确保触摸目标足够大
+      min-height: 32px;
+      min-width: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       &-text {
         font-size: 12px;
@@ -241,6 +296,8 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
+    height: var(--vh-full, 100vh);
+    padding-top: var(--safe-top, 0px);
   }
 
   .ink-loading {
@@ -277,8 +334,12 @@
     max-width: 420px;
     background: var(--color-bg);
     border-radius: 16px 16px 0 0;
-    padding: 24px var(--spacing-lg) calc(24px + var(--safe-bottom));
+    padding: 24px var(--spacing-lg) calc(24px + var(--safe-bottom, 0px));
     animation: slideUp 0.3s ease;
+    // 限制最大高度，防止内容过多溢出
+    max-height: 70vh;
+    max-height: 70dvh;
+    overflow-y: auto;
 
     .share-tip-title {
       display: block;
@@ -302,6 +363,8 @@
       border-radius: var(--radius-md);
       padding: 16px;
       margin-bottom: 8px;
+      // 确保触摸目标足够大
+      min-height: 44px;
       &:active { opacity: 0.7; }
 
       &-text {
@@ -309,6 +372,7 @@
         font-size: 14px;
         color: var(--color-text);
         line-height: 1.6;
+        word-break: break-word;
       }
     }
 
@@ -324,12 +388,29 @@
       margin-top: 16px;
       padding: 12px 0;
       text-align: center;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       &:active { opacity: 0.7; }
 
       &-text {
         font-size: 14px;
         color: var(--color-text-secondary);
       }
+    }
+  }
+}
+
+// ===== 小屏适配 =====
+@media screen and (max-width: 350px) {
+  .article-detail-page {
+    .article-header .article-title {
+      font-size: 20px;
+    }
+
+    .article-content {
+      font-size: 15px;
     }
   }
 }

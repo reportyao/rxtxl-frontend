@@ -1,16 +1,21 @@
+// 日记历史页样式 - v1.2 移动端适配优化
+// 修复：安全区域、100vh问题、触摸目标、文本溢出
+
 .diary-history-page {
   min-height: 100vh;
+  min-height: var(--vh-full, 100vh);
   background-color: var(--color-bg);
 
   .page-header {
-    padding: 60px var(--spacing-lg) 16px;
+    padding: calc(40px + var(--safe-top, 0px)) var(--spacing-lg) 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
 
     .nav-back {
-      width: 36px;
-      height: 36px;
+      // 增大触摸目标到 44x44
+      width: 44px;
+      height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -26,12 +31,14 @@
       letter-spacing: 2px;
     }
 
-    .placeholder { width: 36px; }
+    .placeholder { width: 44px; }
   }
 
   .diary-list {
     height: calc(100vh - 120px);
+    height: calc(var(--vh-full, 100vh) - 120px);
     padding: 8px var(--spacing-lg);
+    padding-bottom: var(--safe-bottom, 0px);
   }
 
   .diary-item {
@@ -42,6 +49,8 @@
     padding: 16px;
     margin-bottom: 12px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    // 确保触摸目标足够大
+    min-height: 60px;
 
     &:active { opacity: 0.85; transform: scale(0.98); }
 
@@ -76,6 +85,8 @@
 
     .content-col {
       flex: 1;
+      // 防止长文本溢出
+      overflow: hidden;
 
       .stone-tag {
         margin-bottom: 6px;
@@ -83,6 +94,11 @@
         .stone-text {
           font-size: 15px;
           color: var(--color-stone);
+          // 防止长石头名称溢出
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
       }
 
@@ -134,6 +150,28 @@
       display: block;
       font-size: 13px;
       color: var(--color-text-hint);
+    }
+  }
+}
+
+// ===== 小屏适配 =====
+@media screen and (max-width: 350px) {
+  .diary-history-page {
+    .diary-item {
+      padding: 12px;
+
+      .date-col {
+        width: 48px;
+        margin-right: 12px;
+
+        .date-day {
+          font-size: 20px;
+        }
+      }
+
+      .content-col .stone-tag .stone-text {
+        font-size: 14px;
+      }
     }
   }
 }

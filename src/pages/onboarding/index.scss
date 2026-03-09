@@ -1,6 +1,10 @@
+// 引导页样式 - v1.2 移动端适配优化
+// 修复：安全区域、100vh问题、小屏字体、触摸目标
+
 .onboarding-page {
   width: 100vw;
   height: 100vh;
+  height: var(--vh-full, 100vh);
   position: relative;
   overflow: hidden;
   background-color: #1a1a1a;
@@ -52,10 +56,10 @@
     }
   }
 
-  // 跳过按钮
+  // 跳过按钮 - 增加安全区域和触摸目标
   .skip-btn {
     position: absolute;
-    top: 60px;
+    top: calc(40px + var(--safe-top, 0px));
     right: 24px;
     z-index: 10;
     color: rgba(255, 255, 255, 0.5);
@@ -63,6 +67,12 @@
     padding: 8px 16px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 20px;
+    // 确保触摸目标足够大
+    min-height: 36px;
+    min-width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:active {
       opacity: 0.7;
@@ -78,6 +88,8 @@
     align-items: center;
     padding: 0 40px;
     text-align: center;
+    // 确保在安全区域内
+    max-width: calc(100vw - 80px);
   }
 
   .slide-text {
@@ -90,6 +102,9 @@
     transform: translateY(10px);
     transition: all 0.8s ease-out;
     white-space: pre-line;
+    // 防止文字溢出
+    word-break: break-word;
+    max-width: 100%;
 
     &.visible {
       opacity: 1;
@@ -97,7 +112,7 @@
     }
   }
 
-  // 开始按钮
+  // 开始按钮 - 确保触摸目标足够大
   .start-btn {
     margin-top: 48px;
     padding: 14px 48px;
@@ -105,6 +120,10 @@
     border: 1px solid rgba(255, 255, 255, 0.6);
     border-radius: 30px;
     transition: all 0.3s ease;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:active {
       background: rgba(255, 255, 255, 0.1);
@@ -119,10 +138,10 @@
     }
   }
 
-  // 进度点
+  // 进度点 - 增加安全区域
   .progress-dots {
     position: absolute;
-    bottom: 80px;
+    bottom: calc(60px + var(--safe-bottom, 0px));
     display: flex;
     gap: 12px;
     z-index: 5;
@@ -143,6 +162,42 @@
 
     &.passed {
       background: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+// ===== 小屏适配 =====
+@media screen and (max-width: 350px) {
+  .onboarding-page {
+    .slide-text {
+      font-size: 20px;
+      letter-spacing: 1px;
+    }
+
+    .start-btn {
+      padding: 12px 36px;
+    }
+
+    .content-area {
+      padding: 0 24px;
+    }
+  }
+}
+
+// ===== 短屏适配（如 iPhone SE）=====
+@media screen and (max-height: 600px) {
+  .onboarding-page {
+    .slide-text {
+      font-size: 20px;
+      line-height: 1.6;
+    }
+
+    .start-btn {
+      margin-top: 32px;
+    }
+
+    .progress-dots {
+      bottom: calc(40px + var(--safe-bottom, 0px));
     }
   }
 }

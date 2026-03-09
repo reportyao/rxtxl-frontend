@@ -1,9 +1,13 @@
+// 文章列表页样式 - v1.2 移动端适配优化
+// 修复：安全区域、100vh问题、卡片触摸目标、文本溢出
+
 .articles-page {
   min-height: 100vh;
+  min-height: var(--vh-full, 100vh);
   background-color: var(--color-bg);
 
   .page-header {
-    padding: 60px var(--spacing-lg) 24px;
+    padding: calc(40px + var(--safe-top, 0px)) var(--spacing-lg) 24px;
     text-align: center;
 
     .page-title {
@@ -25,7 +29,10 @@
 
   .article-list {
     height: calc(100vh - 160px);
+    height: calc(var(--vh-full, 100vh) - 160px);
     padding: 0 var(--spacing-lg);
+    // TabBar 页面需要底部安全区域
+    padding-bottom: calc(60px + var(--safe-bottom, 0px));
   }
 
   .article-card {
@@ -56,7 +63,7 @@
         border-radius: 4px;
       }
 
-      /* 新文章标识 - 朱砂色小标签 */
+      // 新文章标识 - 朱砂色小标签
       .new-badge {
         display: inline-flex;
         align-items: center;
@@ -80,6 +87,9 @@
       color: var(--color-text);
       line-height: 1.5;
       margin-bottom: 8px;
+      // 防止长标题溢出
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     .card-summary {
@@ -131,6 +141,28 @@
       display: block;
       font-size: 13px;
       color: var(--color-text-hint);
+    }
+  }
+}
+
+// ===== 小屏适配 =====
+@media screen and (max-width: 350px) {
+  .articles-page {
+    .page-header .page-title {
+      font-size: 24px;
+      letter-spacing: 2px;
+    }
+
+    .article-card {
+      padding: 16px;
+
+      .card-title {
+        font-size: 16px;
+      }
+
+      .card-summary {
+        font-size: 13px;
+      }
     }
   }
 }

@@ -1,10 +1,14 @@
+// 道痕日记页样式 - v1.2 移动端适配优化
+// 修复：键盘弹出遮挡textarea、安全区域、100vh iOS问题、小屏适配
+
 .diary-page {
   min-height: 100vh;
+  min-height: var(--vh-full, 100vh);
   background-color: var(--color-bg);
 
   // 头部
   .diary-header {
-    padding: 60px var(--spacing-lg) 16px;
+    padding: calc(40px + var(--safe-top, 0px)) var(--spacing-lg) 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -38,11 +42,12 @@
     }
   }
 
-  // 日记内容区
+  // 日记内容区 - 使用dvh解决iOS 100vh问题
   .diary-content {
     height: calc(100vh - 140px);
+    height: calc(var(--vh-full, 100vh) - 140px);
     padding: 0 var(--spacing-lg);
-    padding-bottom: calc(120px + var(--safe-bottom));
+    padding-bottom: calc(120px + var(--safe-bottom, 0px));
   }
 
   // 已回答步骤
@@ -64,6 +69,9 @@
       font-size: 14px;
       color: var(--color-text);
       line-height: 1.6;
+      // 防止长文本溢出
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
   }
 
@@ -97,12 +105,15 @@
       border: 1px solid var(--color-border);
       border-radius: var(--radius-md);
       font-family: var(--font-sans);
-      font-size: 16px;
+      font-size: 16px; // >= 16px 防止iOS自动缩放
       color: var(--color-text);
       line-height: 1.8;
       resize: none;
       box-sizing: border-box;
       transition: border-color 0.3s ease;
+      // 防止iOS默认样式
+      -webkit-appearance: none;
+      appearance: none;
 
       &:focus {
         border-color: var(--color-primary);
@@ -132,6 +143,12 @@
       background-color: var(--color-primary);
       border-radius: 24px;
       transition: all 0.3s ease;
+      // 确保触摸目标足够大
+      min-height: 44px;
+      min-width: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       &:active {
         opacity: 0.85;
@@ -158,7 +175,10 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    min-height: var(--vh-full, 100vh);
     padding: 0 var(--spacing-lg);
+    padding-top: var(--safe-top, 0px);
+    padding-bottom: var(--safe-bottom, 0px);
     text-align: center;
 
     .done-icon {
@@ -181,6 +201,9 @@
       font-size: 16px;
       color: var(--color-stone);
       margin-bottom: 12px;
+      // 防止长石头名称溢出
+      word-break: break-word;
+      max-width: 100%;
     }
 
     .done-hint {
@@ -206,7 +229,10 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    min-height: var(--vh-full, 100vh);
     padding: 0 var(--spacing-lg);
+    padding-top: var(--safe-top, 0px);
+    padding-bottom: var(--safe-bottom, 0px);
     text-align: center;
 
     .ripple-container {
@@ -263,6 +289,10 @@
       background-color: var(--color-card);
       border-radius: var(--radius-md);
       margin-bottom: 16px;
+      // 防止石头内容过长溢出
+      max-width: 100%;
+      box-sizing: border-box;
+      word-break: break-word;
 
       .stone-label {
         display: block;
@@ -290,15 +320,22 @@
     .complete-actions {
       display: flex;
       gap: 16px;
+      // 小屏时改为纵向排列
+      flex-wrap: wrap;
+      justify-content: center;
     }
   }
 
-  // 通用按钮
+  // 通用按钮 - 确保触摸目标足够大
   .action-btn {
     padding: 12px 28px;
     background-color: var(--color-primary);
     border-radius: 24px;
     transition: all 0.3s ease;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:active {
       opacity: 0.85;
@@ -343,14 +380,21 @@
     justify-content: center;
     z-index: 1000;
     animation: fadeIn 0.2s ease;
+    // 安全区域内边距
+    padding: var(--safe-top, 0px) var(--safe-left, 0px) var(--safe-bottom, 0px) var(--safe-right, 0px);
   }
 
   .pin-modal {
     width: 300px;
+    max-width: calc(100vw - 48px);
     background: var(--color-bg);
     border-radius: var(--radius-lg);
     padding: 32px 24px;
     text-align: center;
+    // 防止键盘弹出时弹窗被推出视口
+    max-height: calc(100vh - 100px);
+    max-height: calc(var(--vh-full, 100vh) - 100px);
+    overflow-y: auto;
 
     .pin-modal-title {
       display: block;
@@ -403,6 +447,11 @@
         padding: 10px 0;
         border-radius: 24px;
         text-align: center;
+        // 确保触摸目标足够大
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         &.cancel {
           background: var(--color-card);
@@ -420,6 +469,58 @@
         }
 
         &:active { opacity: 0.8; }
+      }
+    }
+  }
+}
+
+// ===== 小屏适配 =====
+@media screen and (max-width: 350px) {
+  .diary-page {
+    .diary-header .header-title {
+      font-size: 18px;
+    }
+
+    .current-step {
+      .step-question {
+        font-size: 17px;
+      }
+
+      .step-textarea {
+        min-height: 120px;
+        padding: 12px;
+      }
+    }
+
+    .complete-state .complete-actions {
+      flex-direction: column;
+      width: 100%;
+      max-width: 240px;
+    }
+  }
+}
+
+// ===== 键盘弹出时适配 =====
+@media screen and (max-height: 500px) {
+  .diary-page {
+    .diary-header {
+      padding-top: calc(20px + var(--safe-top, 0px));
+      padding-bottom: 8px;
+    }
+
+    .progress-bar {
+      margin-bottom: 12px;
+    }
+
+    .current-step {
+      padding: 12px 0;
+
+      .step-hint {
+        margin-bottom: 12px;
+      }
+
+      .step-textarea {
+        min-height: 100px;
       }
     }
   }
