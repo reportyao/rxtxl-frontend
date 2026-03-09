@@ -61,7 +61,7 @@ export default function LoginPage() {
     try {
       const res = await api.post('/api/auth/login', { phone, code });
       if (res.code === 0) {
-        const { token, user, isNewUser } = res.data;
+        const { token, user } = res.data;
         setAuth(token, user);
 
         if (!user.hasPinSet) {

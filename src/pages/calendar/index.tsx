@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import Taro from '@tarojs/taro';
 import { View, Text } from '@tarojs/components';
 import { api } from '../../utils/request';
-import { useAppStore } from '../../store';
 import './index.scss';
 
 export default function CalendarPage() {
@@ -10,7 +9,6 @@ export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [streakDays, setStreakDays] = useState(0);
   const [totalDays, setTotalDays] = useState(0);
-  const { user } = useAppStore();
 
   useEffect(() => {
     fetchCheckins();
@@ -20,9 +18,11 @@ export default function CalendarPage() {
     try {
       const res = await api.get('/api/diaries/checkins');
       if (res.code === 0) {
-        setCheckinDates(res.data.dates || []);
+        // 从checkins数组中提取日期列表
+        const dates = (res.data.checkins || []).map((c: any) => c.checkinDate);
+        setCheckinDates(dates);
         setStreakDays(res.data.currentStreak || 0);
-        setTotalDays(res.data.totalDays || 0);
+        setTotalDays(res.data.totalCheckins || 0);
       }
     } catch (err) {
       console.error('获取打卡数据失败:', err);

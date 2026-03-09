@@ -24,7 +24,7 @@ export default function ProfilePage() {
 
       if (checkinsRes.code === 0) {
         setStreakDays(checkinsRes.data.currentStreak || 0);
-        setTotalDiaries(checkinsRes.data.totalDays || 0);
+        setTotalDiaries(checkinsRes.data.totalCheckins || 0);
       }
 
       if (stonesRes.code === 0) {

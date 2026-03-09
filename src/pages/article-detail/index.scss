@@ -221,4 +221,90 @@
     font-size: 14px;
     color: var(--color-text-hint);
   }
+
+  // 分享提示弹窗
+  .share-tip-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .share-tip-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--color-bg);
+    border-radius: 16px 16px 0 0;
+    padding: 24px var(--spacing-lg) calc(24px + var(--safe-bottom));
+    animation: slideUp 0.3s ease;
+
+    .share-tip-title {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 18px;
+      color: var(--color-text);
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .share-tip-desc {
+      display: block;
+      font-size: 13px;
+      color: var(--color-text-hint);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .share-tip-quote {
+      background: var(--color-card);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 8px;
+      &:active { opacity: 0.7; }
+
+      &-text {
+        font-family: var(--font-serif);
+        font-size: 14px;
+        color: var(--color-text);
+        line-height: 1.6;
+      }
+    }
+
+    .share-tip-empty {
+      display: block;
+      text-align: center;
+      font-size: 14px;
+      color: var(--color-text-hint);
+      padding: 24px 0;
+    }
+
+    .share-tip-close {
+      margin-top: 16px;
+      padding: 12px 0;
+      text-align: center;
+      &:active { opacity: 0.7; }
+
+      &-text {
+        font-size: 14px;
+        color: var(--color-text-secondary);
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }

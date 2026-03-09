@@ -108,6 +108,21 @@ export async function hashString(str: string): Promise<string> {
   return uint8ArrayToBase64(hashArray).substring(0, 16); // 取前16位
 }
 
+/**
+ * 生成PIN码的哈希值（用于服务器端验证PIN是否正确）
+ * PIN码明文永远不会发送到服务器
+ * @param pin 4位数字PIN码
+ * @param saltBase64 Base64编码的盐值
+ * @returns 哈希字符串
+ */
+export async function hashPin(pin: string, saltBase64: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin + ':' + saltBase64);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = new Uint8Array(hashBuffer);
+  return uint8ArrayToBase64(hashArray);
+}
+
 // ==================== 工具函数 ====================
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {

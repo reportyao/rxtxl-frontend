@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
-import { View, Text, ScrollView } from '@tarojs/components';
+import { View, Text, ScrollView, Input } from '@tarojs/components';
 import { api } from '../../utils/request';
 import { useAppStore } from '../../store';
-import { deriveKey, decrypt } from '../../utils/crypto';
+import { deriveKey, decrypt, hashPin } from '../../utils/crypto';
 import './index.scss';
 
 const STEP_LABELS: Record<string, string> = {
@@ -31,6 +31,9 @@ export default function DiaryDetailPage() {
   const [decryptedContent, setDecryptedContent] = useState<Record<string, string> | null>(null);
   const [loading, setLoading] = useState(true);
   const [decrypting, setDecrypting] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
   const { user, cryptoKey, setCryptoKey } = useAppStore();
 
   useEffect(() => {
@@ -66,24 +69,36 @@ export default function DiaryDetailPage() {
     } catch (err) {
       console.error('解密失败:', err);
       setCryptoKey(null);
-      Taro.showToast({ title: '密码错误，请重新输入', icon: 'none' });
     } finally {
       setDecrypting(false);
     }
   };
 
-  const handleUnlock = async () => {
-    if (!diary || !user?.salt) return;
+  const handlePinInput = (value: string) => {
+    const cleaned = value.replace(/\D/g, '').slice(0, 4);
+    setPinInput(cleaned);
+    setPinError('');
+  };
 
-    const pin = window.prompt?.('请输入4位日记密码');
-    if (pin && pin.length === 4) {
-      try {
-        const key = await deriveKey(pin, user.salt);
-        setCryptoKey(key);
-        await decryptDiary(diary, key);
-      } catch (err) {
-        Taro.showToast({ title: '密码错误', icon: 'none' });
-      }
+  const handleUnlock = async () => {
+    if (!diary || !user?.salt || pinInput.length !== 4) return;
+
+    setDecrypting(true);
+    setPinError('');
+    try {
+      const key = await deriveKey(pinInput, user.salt);
+      // 先尝试解密，如果成功说明PIN正确
+      const plaintext = await decrypt(diary.encryptedData, diary.iv, key);
+      const content = JSON.parse(plaintext);
+      setCryptoKey(key);
+      setDecryptedContent(content);
+      setShowPinModal(false);
+      setPinInput('');
+    } catch (err) {
+      setPinError('密码错误，请重新输入');
+      setPinInput('');
+    } finally {
+      setDecrypting(false);
     }
   };
 
@@ -144,7 +159,7 @@ export default function DiaryDetailPage() {
             <View className='lock-icon'>🔒</View>
             <Text className='lock-text'>日记内容已加密</Text>
             <Text className='lock-hint'>输入日记密码查看完整道痕</Text>
-            <View className='unlock-btn' onClick={handleUnlock}>
+            <View className='unlock-btn' onClick={() => { setShowPinModal(true); setPinInput(''); setPinError(''); }}>
               <Text className='unlock-btn-text'>
                 {decrypting ? '解密中...' : '输入密码解锁'}
               </Text>
@@ -152,6 +167,47 @@ export default function DiaryDetailPage() {
           </View>
         )}
       </ScrollView>
+
+      {/* 自定义PIN输入弹窗 */}
+      {showPinModal && (
+        <View className='pin-modal-overlay' onClick={() => setShowPinModal(false)}>
+          <View className='pin-modal' onClick={e => e.stopPropagation()}>
+            <Text className='pin-modal-title'>输入日记密码</Text>
+            <Text className='pin-modal-hint'>请输入4位数字密码解锁道痕</Text>
+            
+            <View className='pin-dots'>
+              {[0, 1, 2, 3].map(i => (
+                <View key={i} className={`pin-dot ${i < pinInput.length ? 'filled' : ''}`} />
+              ))}
+            </View>
+            
+            <Input
+              className='pin-input-hidden'
+              type='number'
+              maxlength={4}
+              focus
+              value={pinInput}
+              onInput={e => handlePinInput(e.detail.value)}
+            />
+
+            {pinError && <Text className='pin-error'>{pinError}</Text>}
+
+            <View className='pin-modal-actions'>
+              <View className='pin-cancel' onClick={() => setShowPinModal(false)}>
+                <Text className='pin-cancel-text'>取消</Text>
+              </View>
+              <View
+                className={`pin-confirm ${pinInput.length !== 4 || decrypting ? 'disabled' : ''}`}
+                onClick={handleUnlock}
+              >
+                <Text className='pin-confirm-text'>
+                  {decrypting ? '解密中...' : '确认'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }

@@ -1,13 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
-import { View, Text, Canvas } from '@tarojs/components';
-import { useAppStore } from '../../store';
+import { View, Text } from '@tarojs/components';
 import './index.scss';
 
 export default function SharePage() {
   const router = useRouter();
   const [cardReady, setCardReady] = useState(false);
-  const { user } = useAppStore();
 
   const type = router.params.type || 'quote'; // quote | diary | profile
   const text = decodeURIComponent(router.params.text || '');
@@ -71,7 +69,7 @@ export default function SharePage() {
       ctx.font = '20px serif';
       ctx.textAlign = 'left';
 
-      const lines = wrapText(ctx, `「${text}」`, cardWidth - 64, 20);
+      const lines = wrapText(ctx, `「${text}」`, cardWidth - 64);
       let y = 100;
       lines.forEach(line => {
         ctx.fillText(line, 32, y);
@@ -143,7 +141,7 @@ export default function SharePage() {
     setCardReady(true);
   };
 
-  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number, fontSize: number): string[] => {
+  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
     const lines: string[] = [];
     let currentLine = '';
 
@@ -191,8 +189,8 @@ export default function SharePage() {
       </View>
 
       <View className='action-bar'>
-        <View className='save-btn' onClick={handleSave}>
-          <Text className='save-btn-text'>保存图片</Text>
+        <View className={`save-btn ${!cardReady ? 'disabled' : ''}`} onClick={handleSave}>
+          <Text className='save-btn-text'>{cardReady ? '保存图片' : '生成中...'}</Text>
         </View>
         <Text className='action-hint'>长按图片也可以保存</Text>
       </View>

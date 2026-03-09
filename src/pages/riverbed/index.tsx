@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Taro from '@tarojs/taro';
-import { View, Text, Canvas } from '@tarojs/components';
+import { View, Text } from '@tarojs/components';
 import { api } from '../../utils/request';
 import './index.scss';
 
@@ -41,7 +41,6 @@ export default function RiverbedPage() {
   const [uniqueStones, setUniqueStones] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedStone, setSelectedStone] = useState<StoneData | null>(null);
-  const canvasRef = useRef<any>(null);
   const stoneNodesRef = useRef<StoneNode[]>([]);
 
   useEffect(() => {
@@ -204,14 +203,26 @@ export default function RiverbedPage() {
     return () => clearTimeout(timer);
   }, [stones, drawRiverbed]);
 
-  // Canvas点击事件
+  // Canvas点击事件（兼容touch和click）
   const handleCanvasClick = (e: any) => {
     const canvasEl = document.querySelector('.riverbed-canvas') as HTMLCanvasElement;
     if (!canvasEl) return;
 
     const rect = canvasEl.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // 兼容触摸和鼠标事件
+    let clientX: number, clientY: number;
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    } else {
+      clientX = e.clientX || 0;
+      clientY = e.clientY || 0;
+    }
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
 
     // 检查是否点击了某个石头
     for (const node of stoneNodesRef.current) {

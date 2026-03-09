@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro';
 import { View, Text, ScrollView } from '@tarojs/components';
 import { api } from '../../utils/request';

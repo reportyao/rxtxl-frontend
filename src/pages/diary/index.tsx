@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Taro from '@tarojs/taro';
 import { View, Text, Textarea, ScrollView } from '@tarojs/components';
 import { api } from '../../utils/request';
@@ -59,7 +59,6 @@ export default function DiaryPage() {
   const [saving, setSaving] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const [todayDone, setTodayDone] = useState(false);
-  const scrollRef = useRef<any>(null);
   const { user, cryptoKey, setCryptoKey } = useAppStore();
 
   useEffect(() => {

@@ -135,6 +135,28 @@ export default function ArticleDetailPage() {
       <View className='article-footer'>
         <Text className='footer-text'>—— 本章完 ——</Text>
       </View>
+
+      {/* 分享提示 */}
+      {showShareTip && (
+        <View className='share-tip-overlay' onClick={() => setShowShareTip(false)}>
+          <View className='share-tip-card' onClick={e => e.stopPropagation()}>
+            <Text className='share-tip-title'>分享本章</Text>
+            <Text className='share-tip-desc'>长按下方金句可生成分享卡片</Text>
+            {article.quotes && article.quotes.length > 0 ? (
+              article.quotes.map((quote, idx) => (
+                <View key={idx} className='share-tip-quote' onClick={() => { handleShareQuote(quote); setShowShareTip(false); }}>
+                  <Text className='share-tip-quote-text'>「{quote}」</Text>
+                </View>
+              ))
+            ) : (
+              <Text className='share-tip-empty'>本章暂无金句</Text>
+            )}
+            <View className='share-tip-close' onClick={() => setShowShareTip(false)}>
+              <Text className='share-tip-close-text'>关闭</Text>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }

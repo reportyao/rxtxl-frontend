@@ -5,20 +5,30 @@ import { useAppStore } from '../../store';
 import './index.scss';
 
 export default function IndexPage() {
-  const { loadFromStorage, isLoggedIn, user } = useAppStore();
+  const { loadFromStorage } = useAppStore();
 
   useEffect(() => {
+    // 先从storage加载状态
     loadFromStorage();
 
-    // 检查是否首次访问
+    // 直接从storage读取，避免zustand状态更新的时序问题
     const hasOnboarded = Taro.getStorageSync('hasOnboarded');
+    const token = Taro.getStorageSync('token');
+    const userStr = Taro.getStorageSync('user');
+
+    let user: any = null;
+    try {
+      user = userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+      user = null;
+    }
 
     setTimeout(() => {
       if (!hasOnboarded) {
         Taro.redirectTo({ url: '/pages/onboarding/index' });
-      } else if (!isLoggedIn) {
+      } else if (!token || !user) {
         Taro.redirectTo({ url: '/pages/login/index' });
-      } else if (user && !user.hasPinSet) {
+      } else if (!user.hasPinSet) {
         Taro.redirectTo({ url: '/pages/pin-setup/index' });
       } else {
         Taro.switchTab({ url: '/pages/articles/index' });

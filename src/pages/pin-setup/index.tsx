@@ -3,7 +3,7 @@ import Taro from '@tarojs/taro';
 import { View, Text, Input } from '@tarojs/components';
 import { api } from '../../utils/request';
 import { useAppStore } from '../../store';
-import { generateSalt, deriveKey } from '../../utils/crypto';
+import { generateSalt, deriveKey, hashPin } from '../../utils/crypto';
 import './index.scss';
 
 type Step = 'intro' | 'input' | 'confirm' | 'warning';
@@ -46,8 +46,9 @@ export default function PinSetupPage() {
     try {
       const salt = generateSalt();
       const key = await deriveKey(pin, salt);
+      const pinHash = await hashPin(pin, salt);
 
-      const res = await api.post('/api/auth/set-pin', { pin, salt });
+      const res = await api.post('/api/auth/set-pin', { pinHash, salt });
       if (res.code === 0) {
         setCryptoKey(key);
         setUser({ hasPinSet: true, salt });
