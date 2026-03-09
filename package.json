@@ -15,6 +15,7 @@
     "dev:h5": "npm run build:h5 -- --watch"
   },
   "dependencies": {
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.6.2",
     "@tarojs/cli": "^3.6.35",
     "@tarojs/components": "^3.6.35",
     "@tarojs/helper": "^3.6.35",
@@ -23,14 +24,17 @@
     "@tarojs/react": "^3.6.35",
     "@tarojs/router": "^3.6.35",
     "@tarojs/runtime": "^3.6.35",
+    "@tarojs/shared": "^4.1.11",
     "@tarojs/taro": "^3.6.35",
     "@tarojs/webpack5-runner": "^3.6.35",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-refresh": "^0.18.0",
     "zustand": "^4.5.0"
   },
   "devDependencies": {
     "@babel/runtime": "^7.23.0",
+    "@swc/core": "^1.15.18",
     "@types/react": "^18.2.0",
     "babel-preset-taro": "^3.6.35",
     "postcss": "^8.4.31",

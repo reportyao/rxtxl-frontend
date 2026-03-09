@@ -64,11 +64,16 @@ export default defineConfig({
   plugins: ['@tarojs/plugin-framework-react', '@tarojs/plugin-platform-h5'],
 
   /** 编译时常量定义（可在代码中通过变量名直接使用） */
-  defineConstants: {},
+  defineConstants: {
+    'process.env.TARO_APP_API_URL': JSON.stringify(process.env.TARO_APP_API_URL || ''),
+  },
 
   /** 文件复制配置（将非编译文件复制到输出目录） */
   copy: {
-    patterns: [],
+    patterns: [
+      { from: 'src/sw.js', to: 'dist/sw.js' },
+      { from: 'src/favicon.ico', to: 'dist/favicon.ico' },
+    ],
     options: {},
   },
 
@@ -122,8 +127,10 @@ export default defineConfig({
      * - maximum-scale=1.0, user-scalable=no: 禁止双指缩放
      */
     htmlPluginOption: {
+      template: require('path').resolve(__dirname, '../src/index.html'),
       templateParameters: {
         viewport: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover',
+        mobileWebAppCapable: 'yes',
       },
     },
 

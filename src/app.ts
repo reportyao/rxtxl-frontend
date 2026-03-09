@@ -36,19 +36,15 @@ function App({ children }: PropsWithChildren) {
     useAppStore.getState().loadFromStorage();
 
     // ===== Step 2: 注册Service Worker（PWA） =====
-    // Service Worker提供以下能力：
-    // - 离线缓存：文章内容和静态资源缓存到本地，无网络也能使用
-    // - 安装提示：用户可以将应用"添加到桌面"，像原生App一样打开
-    // - 后台同步：离线写的日记在网络恢复后自动同步（未来功能）
+    // Service Worker提供离线缓存能力，注册失败不影响应用正常使用
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(
           (registration) => {
             console.log('SW registered:', registration.scope);
           },
-          (error) => {
-            // SW注册失败不影响应用正常使用，只是失去离线能力
-            console.log('SW registration failed:', error);
+          () => {
+            // SW注册失败不影响应用正常使用
           }
         );
       });
