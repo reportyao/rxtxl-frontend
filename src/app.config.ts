@@ -1,0 +1,56 @@
+export default defineAppConfig({
+  pages: [
+    'pages/index/index',
+    'pages/onboarding/index',
+    'pages/login/index',
+    'pages/pin-setup/index',
+    'pages/articles/index',
+    'pages/article-detail/index',
+    'pages/diary/index',
+    'pages/diary-history/index',
+    'pages/diary-detail/index',
+    'pages/riverbed/index',
+    'pages/profile/index',
+    'pages/calendar/index',
+    'pages/share/index',
+  ],
+  tabBar: {
+    color: '#8A8A8A',
+    selectedColor: '#3A4A5C',
+    backgroundColor: '#F7F4ED',
+    borderStyle: 'white',
+    list: [
+      {
+        pagePath: 'pages/articles/index',
+        text: '读',
+        iconPath: 'assets/icons/tab-read.png',
+        selectedIconPath: 'assets/icons/tab-read-active.png',
+      },
+      {
+        pagePath: 'pages/diary/index',
+        text: '捞石头',
+        iconPath: 'assets/icons/tab-diary.png',
+        selectedIconPath: 'assets/icons/tab-diary-active.png',
+      },
+      {
+        pagePath: 'pages/riverbed/index',
+        text: '河床',
+        iconPath: 'assets/icons/tab-riverbed.png',
+        selectedIconPath: 'assets/icons/tab-riverbed-active.png',
+      },
+      {
+        pagePath: 'pages/profile/index',
+        text: '我的',
+        iconPath: 'assets/icons/tab-profile.png',
+        selectedIconPath: 'assets/icons/tab-profile-active.png',
+      },
+    ],
+  },
+  window: {
+    backgroundTextStyle: 'light',
+    navigationBarBackgroundColor: '#F7F4ED',
+    navigationBarTitleText: '人选天选论',
+    navigationBarTextStyle: 'black',
+    backgroundColor: '#F7F4ED',
+  },
+});

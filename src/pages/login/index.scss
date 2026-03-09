@@ -1,0 +1,137 @@
+.login-page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+
+  .login-header {
+    padding-top: 120px;
+    padding-bottom: 60px;
+    text-align: center;
+
+    .title {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 32px;
+      color: var(--color-primary);
+      letter-spacing: 6px;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 14px;
+      color: var(--color-text-hint);
+      letter-spacing: 2px;
+    }
+  }
+
+  .login-form {
+    flex: 1;
+  }
+
+  .form-item {
+    margin-bottom: 28px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 8px;
+  }
+
+  .form-input {
+    flex: 1;
+    font-size: 18px;
+    color: var(--color-text);
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 8px 0;
+    letter-spacing: 2px;
+  }
+
+  .code-input {
+    flex: 1;
+  }
+
+  .placeholder {
+    color: var(--color-text-hint);
+    font-size: 16px;
+  }
+
+  .send-code-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--color-primary);
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+
+    &:active {
+      opacity: 0.7;
+      transform: scale(0.96);
+    }
+
+    &.disabled {
+      border-color: var(--color-border);
+      pointer-events: none;
+
+      .send-code-text {
+        color: var(--color-text-hint);
+      }
+    }
+
+    .send-code-text {
+      font-size: 13px;
+      color: var(--color-primary);
+    }
+  }
+
+  .login-btn {
+    margin-top: 48px;
+    padding: 16px;
+    background-color: var(--color-primary);
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+
+    &:active {
+      opacity: 0.85;
+      transform: scale(0.98);
+    }
+
+    &.disabled {
+      background-color: var(--color-border);
+      pointer-events: none;
+    }
+
+    &-text {
+      font-size: 16px;
+      color: #FFFFFF;
+      letter-spacing: 4px;
+    }
+  }
+
+  .login-footer {
+    padding: 24px 0;
+    padding-bottom: calc(24px + var(--safe-bottom));
+    text-align: center;
+
+    .footer-text {
+      font-size: 12px;
+      color: var(--color-text-hint);
+    }
+  }
+}

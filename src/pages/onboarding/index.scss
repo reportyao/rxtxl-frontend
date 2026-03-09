@@ -1,0 +1,153 @@
+.onboarding-page {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background-color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  // 水墨背景
+  .ink-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .ink-circle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.15;
+
+    &-1 {
+      width: 300px;
+      height: 300px;
+      top: -50px;
+      right: -80px;
+      background: radial-gradient(circle, #3A4A5C 0%, transparent 70%);
+      animation: floatSlow 8s ease-in-out infinite;
+    }
+
+    &-2 {
+      width: 200px;
+      height: 200px;
+      bottom: 20%;
+      left: -40px;
+      background: radial-gradient(circle, #5B8C7A 0%, transparent 70%);
+      animation: floatSlow 10s ease-in-out infinite reverse;
+    }
+
+    &-3 {
+      width: 250px;
+      height: 250px;
+      bottom: -30px;
+      right: 20%;
+      background: radial-gradient(circle, #8B6F4E 0%, transparent 70%);
+      animation: floatSlow 12s ease-in-out infinite;
+    }
+  }
+
+  // 跳过按钮
+  .skip-btn {
+    position: absolute;
+    top: 60px;
+    right: 24px;
+    z-index: 10;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+
+    &:active {
+      opacity: 0.7;
+    }
+  }
+
+  // 文字区域
+  .content-area {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 40px;
+    text-align: center;
+  }
+
+  .slide-text {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    color: #FFFFFF;
+    line-height: 1.8;
+    letter-spacing: 2px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.8s ease-out;
+    white-space: pre-line;
+
+    &.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  // 开始按钮
+  .start-btn {
+    margin-top: 48px;
+    padding: 14px 48px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 30px;
+    transition: all 0.3s ease;
+
+    &:active {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(0.96);
+    }
+
+    &-text {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      color: #FFFFFF;
+      letter-spacing: 4px;
+    }
+  }
+
+  // 进度点
+  .progress-dots {
+    position: absolute;
+    bottom: 80px;
+    display: flex;
+    gap: 12px;
+    z-index: 5;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.4s ease;
+
+    &.active {
+      width: 24px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    &.passed {
+      background: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -20px) scale(1.1); }
+}

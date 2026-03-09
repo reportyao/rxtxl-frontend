@@ -1,0 +1,189 @@
+.calendar-page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-bottom: calc(40px + var(--safe-bottom));
+
+  .page-header {
+    padding: 60px var(--spacing-lg) 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .nav-back {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      &:active { opacity: 0.7; }
+      .back-icon { font-size: 20px; color: var(--color-text); }
+    }
+
+    .page-title {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      color: var(--color-primary);
+      letter-spacing: 2px;
+    }
+
+    .placeholder { width: 36px; }
+  }
+
+  // 统计卡片
+  .stats-row {
+    display: flex;
+    gap: 12px;
+    padding: 16px var(--spacing-lg);
+  }
+
+  .stat-card {
+    flex: 1;
+    text-align: center;
+    background-color: var(--color-white);
+    border-radius: var(--radius-md);
+    padding: 16px 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+
+    .stat-number {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 28px;
+      color: var(--color-primary);
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      display: block;
+      font-size: 11px;
+      color: var(--color-text-hint);
+    }
+  }
+
+  // 日历容器
+  .calendar-container {
+    margin: 16px var(--spacing-lg);
+    background-color: var(--color-white);
+    border-radius: var(--radius-lg);
+    padding: 20px 16px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+
+  // 月份导航
+  .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+
+    .month-arrow {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      &:active { opacity: 0.5; }
+
+      .arrow-text {
+        font-size: 24px;
+        color: var(--color-text-secondary);
+      }
+    }
+
+    .month-title {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      color: var(--color-text);
+      letter-spacing: 1px;
+    }
+  }
+
+  // 星期头
+  .week-header {
+    display: flex;
+    margin-bottom: 8px;
+
+    .week-cell {
+      flex: 1;
+      text-align: center;
+      padding: 8px 0;
+
+      .week-text {
+        font-size: 12px;
+        color: var(--color-text-hint);
+      }
+    }
+  }
+
+  // 日期格子
+  .days-grid {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .day-cell {
+    width: calc(100% / 7);
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+    &.empty { visibility: hidden; }
+
+    .day-number {
+      font-size: 14px;
+      color: var(--color-text);
+      z-index: 1;
+    }
+
+    // 打卡标记 - 水墨晕染效果
+    .ink-mark {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(58, 74, 92, 0.2) 0%, rgba(58, 74, 92, 0.05) 70%, transparent 100%);
+      animation: inkDrop 0.5s ease-out;
+    }
+
+    &.checked {
+      .day-number {
+        color: var(--color-primary);
+        font-weight: 600;
+      }
+    }
+
+    &.today {
+      .day-number {
+        color: var(--color-accent);
+        font-weight: 700;
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 4px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background-color: var(--color-accent);
+      }
+    }
+  }
+
+  // 鼓励语
+  .encourage-section {
+    padding: 32px var(--spacing-lg);
+    text-align: center;
+
+    .encourage-text {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      line-height: 1.8;
+      letter-spacing: 1px;
+    }
+  }
+}

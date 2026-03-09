@@ -1,0 +1,149 @@
+.pin-setup-page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--spacing-lg);
+
+  .step-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .lock-icon, .warning-icon {
+    font-size: 48px;
+    margin-bottom: 24px;
+  }
+
+  .step-title {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 22px;
+    color: var(--color-primary);
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+  }
+
+  .step-hint {
+    display: block;
+    font-size: 14px;
+    color: var(--color-text-hint);
+    margin-bottom: 48px;
+  }
+
+  // 加密说明
+  .security-desc {
+    margin: 24px 0 48px;
+    padding: 24px;
+    background-color: var(--color-card);
+    border-radius: var(--radius-md);
+
+    .desc-text {
+      display: block;
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+
+    .desc-highlight {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      color: var(--color-primary);
+      letter-spacing: 1px;
+    }
+  }
+
+  // PIN码圆点
+  .pin-dots {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 48px;
+  }
+
+  .pin-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    transition: all 0.2s ease;
+
+    &.filled {
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
+      transform: scale(1.1);
+    }
+  }
+
+  .pin-input-hidden {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  // 警告框
+  .warning-title {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 22px;
+    color: var(--color-accent);
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+  }
+
+  .warning-box {
+    margin-bottom: 48px;
+    padding: 24px;
+    background-color: #FFF8F5;
+    border: 1px solid rgba(200, 75, 49, 0.15);
+    border-radius: var(--radius-md);
+
+    .warning-text {
+      font-size: 14px;
+      color: var(--color-text);
+      line-height: 1.8;
+    }
+  }
+
+  // 按钮
+  .next-btn, .confirm-btn {
+    width: 100%;
+    padding: 16px;
+    background-color: var(--color-primary);
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+
+    &:active {
+      opacity: 0.85;
+      transform: scale(0.98);
+    }
+
+    &.disabled {
+      background-color: var(--color-border);
+      pointer-events: none;
+    }
+
+    &-text {
+      font-size: 16px;
+      color: #FFFFFF;
+      letter-spacing: 2px;
+    }
+  }
+
+  .back-link {
+    margin-top: 24px;
+
+    &-text {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      text-decoration: underline;
+    }
+  }
+}

@@ -1,0 +1,224 @@
+.article-detail-page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-bottom: calc(40px + var(--safe-bottom));
+
+  // 导航栏
+  .nav-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 88px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 var(--spacing-md) 12px;
+    background: linear-gradient(to bottom, var(--color-bg) 60%, transparent);
+    z-index: 100;
+  }
+
+  .nav-back, .nav-share {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(247, 244, 237, 0.8);
+
+    &:active { opacity: 0.7; }
+  }
+
+  .back-icon { font-size: 20px; color: var(--color-text); }
+  .share-icon { font-size: 18px; color: var(--color-text); }
+
+  // 文章头部
+  .article-header {
+    padding: 100px var(--spacing-lg) 24px;
+    text-align: center;
+
+    .article-chapter {
+      display: block;
+      font-size: 13px;
+      color: var(--color-stone);
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    .article-title {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 24px;
+      color: var(--color-text);
+      line-height: 1.6;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+
+    .article-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+
+      .meta-date, .meta-views, .meta-divider {
+        font-size: 12px;
+        color: var(--color-text-hint);
+      }
+    }
+  }
+
+  // 分割线
+  .divider {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-xl);
+    margin-bottom: 32px;
+
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--color-border), transparent);
+    }
+
+    .divider-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background-color: var(--color-border);
+      margin: 0 12px;
+    }
+  }
+
+  // 文章正文
+  .article-content {
+    padding: 0 var(--spacing-lg);
+    font-family: var(--font-serif);
+    font-size: 17px;
+    color: var(--color-text);
+    line-height: 2;
+    letter-spacing: 0.5px;
+
+    // 覆盖RichText内部样式
+    p {
+      margin-bottom: 24px;
+      text-indent: 2em;
+    }
+
+    h2, h3 {
+      font-family: var(--font-serif);
+      color: var(--color-primary);
+      margin: 32px 0 16px;
+      text-indent: 0;
+    }
+
+    blockquote {
+      margin: 24px 0;
+      padding: 16px 20px;
+      background-color: var(--color-card);
+      border-left: 3px solid var(--color-stone);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-style: italic;
+      text-indent: 0;
+    }
+
+    ul, ol {
+      margin: 16px 0;
+      padding-left: 2em;
+      text-indent: 0;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    strong {
+      color: var(--color-primary);
+    }
+  }
+
+  // 金句区域
+  .quotes-section {
+    margin: 48px var(--spacing-lg) 0;
+    padding-top: 32px;
+    border-top: 1px solid var(--color-border);
+
+    .quotes-title {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      color: var(--color-text-secondary);
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+  }
+
+  .quote-card {
+    background-color: var(--color-card);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &:active { opacity: 0.8; }
+
+    .quote-text {
+      flex: 1;
+      font-family: var(--font-serif);
+      font-size: 14px;
+      color: var(--color-text);
+      line-height: 1.6;
+      margin-right: 12px;
+    }
+
+    .quote-share {
+      flex-shrink: 0;
+      padding: 4px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+
+      &-text {
+        font-size: 12px;
+        color: var(--color-text-secondary);
+      }
+    }
+  }
+
+  // 底部
+  .article-footer {
+    padding: 48px 0;
+    text-align: center;
+
+    .footer-text {
+      font-size: 13px;
+      color: var(--color-text-hint);
+      letter-spacing: 4px;
+    }
+  }
+
+  // 加载状态
+  .loading-state, .error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+
+  .ink-loading {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-primary) 0%, transparent 70%);
+    animation: inkDrop 1.5s ease-in-out infinite;
+    margin-bottom: 16px;
+  }
+
+  .loading-text, .error-text {
+    font-size: 14px;
+    color: var(--color-text-hint);
+  }
+}

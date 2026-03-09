@@ -1,0 +1,22 @@
+{
+  "name": "人选天选论",
+  "short_name": "人选天选论",
+  "description": "认识自己的河流，每天捞一块石头",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F4ED",
+  "theme_color": "#3A4A5C",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

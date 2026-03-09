@@ -1,0 +1,157 @@
+.profile-page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-bottom: calc(80px + var(--safe-bottom));
+
+  // 用户信息卡片
+  .user-card {
+    padding: 80px var(--spacing-lg) 24px;
+    text-align: center;
+
+    .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--color-primary), #5B6B7A);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+
+      .avatar-text {
+        font-family: var(--font-serif);
+        font-size: 24px;
+        color: #FFFFFF;
+      }
+    }
+
+    .nickname {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 20px;
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+
+    .phone {
+      display: block;
+      font-size: 13px;
+      color: var(--color-text-hint);
+    }
+  }
+
+  // 数据统计
+  .stats-bar {
+    display: flex;
+    align-items: center;
+    margin: 0 var(--spacing-lg) 24px;
+    padding: 20px;
+    background-color: var(--color-white);
+    border-radius: var(--radius-md);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+
+    .stat-item {
+      flex: 1;
+      text-align: center;
+
+      .stat-value {
+        display: block;
+        font-family: var(--font-serif);
+        font-size: 24px;
+        color: var(--color-primary);
+        line-height: 1.2;
+        margin-bottom: 4px;
+      }
+
+      .stat-label {
+        display: block;
+        font-size: 11px;
+        color: var(--color-text-hint);
+      }
+    }
+
+    .stat-divider {
+      width: 1px;
+      height: 32px;
+      background-color: var(--color-border);
+    }
+  }
+
+  // 菜单列表
+  .menu-list {
+    margin: 0 var(--spacing-lg);
+    background-color: var(--color-white);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+
+    &:last-child { border-bottom: none; }
+    &:active { background-color: var(--color-card); }
+
+    .menu-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .menu-icon { font-size: 20px; }
+      .menu-label {
+        font-size: 15px;
+        color: var(--color-text);
+      }
+    }
+
+    .menu-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .menu-hint {
+        font-size: 13px;
+        color: var(--color-text-hint);
+      }
+
+      .menu-arrow {
+        font-size: 18px;
+        color: var(--color-text-hint);
+      }
+    }
+  }
+
+  // 退出登录
+  .logout-section {
+    margin: 24px var(--spacing-lg);
+
+    .logout-btn {
+      padding: 14px;
+      text-align: center;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+
+      &:active { opacity: 0.7; }
+
+      .logout-text {
+        font-size: 15px;
+        color: var(--color-text-secondary);
+      }
+    }
+  }
+
+  // 版本信息
+  .version-info {
+    text-align: center;
+    padding: 16px 0;
+
+    .version-text {
+      font-size: 12px;
+      color: var(--color-text-hint);
+    }
+  }
+}

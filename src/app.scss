@@ -1,0 +1,120 @@
+// ==================== 人选天选论 全局样式 ====================
+// 新中式极简 + 水墨意象
+
+// ==================== 色彩变量 ====================
+:root {
+  --color-bg: #F7F4ED;           // 宣纸白 - 主背景
+  --color-card: #F0EDE6;         // 月白 - 卡片背景
+  --color-text: #2C2C2C;         // 玄墨 - 主文字
+  --color-text-secondary: #8A8A8A; // 银灰 - 次要文字
+  --color-text-hint: #B8B0A8;    // 薄雾 - 提示文字
+  --color-primary: #3A4A5C;      // 黛青 - 主题色
+  --color-accent: #C84B31;       // 朱砂 - 强调色
+  --color-success: #5B8C7A;      // 松石绿 - 成就色
+  --color-stone: #8B6F4E;        // 赭石 - 石头色
+  --color-border: #E0DCD4;       // 淡墨 - 分割线
+  --color-white: #FFFFFF;
+
+  // 间距
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+
+  // 圆角
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 50%;
+
+  // 字体
+  --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', serif;
+  --font-sans: 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  // 安全区域
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+// ==================== 全局重置 ====================
+page {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// H5环境下的body重置
+body {
+  background-color: var(--color-bg);
+  margin: 0;
+  padding: 0;
+}
+
+// ==================== 通用工具类 ====================
+.text-primary { color: var(--color-primary); }
+.text-accent { color: var(--color-accent); }
+.text-success { color: var(--color-success); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-hint { color: var(--color-text-hint); }
+
+.font-serif { font-family: var(--font-serif); }
+.font-sans { font-family: var(--font-sans); }
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+// ==================== 动画 ====================
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes inkDrop {
+  0% {
+    transform: scale(0);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+.animate-fadeInUp { animation: fadeInUp 0.5s ease-out; }
+.animate-breathe { animation: breathe 2s ease-in-out infinite; }
