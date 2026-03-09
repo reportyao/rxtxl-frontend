@@ -43,6 +43,9 @@
 
     .card-chapter {
       margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
 
       .chapter-text {
         font-size: 12px;
@@ -51,6 +54,22 @@
         padding: 2px 8px;
         background-color: rgba(139, 111, 78, 0.08);
         border-radius: 4px;
+      }
+
+      /* 新文章标识 - 朱砂色小标签 */
+      .new-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1px 6px;
+        background-color: var(--color-accent);
+        border-radius: 3px;
+
+        .new-badge-text {
+          font-size: 10px;
+          color: #fff;
+          font-weight: 500;
+        }
       }
     }
 

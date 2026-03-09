@@ -1,56 +1,87 @@
-import { useState, useEffect } from 'react';
+/**
+ * 道痕日记页 - "捞石头"Tab
+ *
+ * 功能说明：
+ * - 7层引导式对话写作，逐步引导用户深入自我探索
+ * - 本地草稿实时保存到localStorage，中途退出可恢复
+ * - 完成后使用AES-256加密日记内容并上传服务器
+ * - 完成页面提供"分享今日一捞"入口
+ * - 已写过当天日记时显示已完成状态
+ *
+ * 加密流程：
+ * 1. 用户完成7层写作
+ * 2. 前端将所有回答JSON序列化
+ * 3. 使用用户PIN派生的AES密钥加密
+ * 4. 加密后的密文上传服务器
+ *
+ * 本地草稿：
+ * - 每次输入自动保存到localStorage
+ * - key格式: diary_draft_{date}
+ * - 用户完成保存后清除草稿
+ */
+import { useState, useEffect, useCallback } from 'react';
 import Taro from '@tarojs/taro';
-import { View, Text, Textarea, ScrollView } from '@tarojs/components';
+import { View, Text, Textarea, Input, ScrollView } from '@tarojs/components';
 import { api } from '../../utils/request';
 import { useAppStore } from '../../store';
 import { deriveKey, encrypt, hashString } from '../../utils/crypto';
 import './index.scss';
 
-// 引导式对话的7个层次
+/**
+ * 引导式对话的7个层次
+ * 每层包含：引导问题、提示文字、输入框placeholder
+ * 对应需求文档第7章的完整交互文案设计
+ */
 const GUIDE_STEPS = [
   {
     id: 'event',
-    question: '今天，你的河面上飘过了什么？',
-    hint: '写下今天让你情绪波动最大的一件事。不需要完整叙述，几句话就够了。',
+    question: '今天，什么事让你的河面起了波澜？',
+    hint: '只描述发生了什么，不解释、不评价、不抒情',
     placeholder: '今天发生了什么事让你心里不平静...',
   },
   {
-    id: 'emotion',
-    question: '那一刻，河水是什么颜色的？',
-    hint: '试着描述当时的情绪。是愤怒的红？焦虑的灰？还是委屈的蓝？不要评判，只是感受。',
-    placeholder: '当时我感到...',
+    id: 'reaction',
+    question: '那一刻，你的第一反应是什么？',
+    hint: '不是正确答案，是你最直接的感觉，比如"想反驳""很酸""想逃"',
+    placeholder: '我的第一反应是...',
   },
   {
-    id: 'thought',
-    question: '水面之下，你在想什么？',
-    hint: '那个情绪背后，你脑子里在转的念头是什么？"他不应该这样对我"？"我不够好"？把它原原本本写出来。',
-    placeholder: '我当时心里的声音是...',
-  },
-  {
-    id: 'fear',
-    question: '如果继续往下潜，你怕什么？',
-    hint: '那个念头再往深处走，你最怕的是什么？怕失去什么？怕被看到什么？怕变成什么？',
-    placeholder: '我最怕的是...',
-  },
-  {
-    id: 'desire',
-    question: '你真正想要的是什么？',
-    hint: '恐惧的反面，往往就是你最渴望的东西。你其实想要什么？被认可？被爱？安全感？自由？',
+    id: 'greed',
+    question: '如果顺着这股劲往前走……你其实想得到什么？',
+    hint: '写具体的，不要写大词。比如"想让他承认我没错""想比那个人强"',
     placeholder: '我其实想要...',
   },
   {
+    id: 'fear',
+    question: '在这件事的背后……你其实在害怕什么？',
+    hint: '写最丑、最小、最直接的那个"怕"。比如"怕被看不起""怕选错了"',
+    placeholder: '我最怕的是...',
+  },
+  {
+    id: 'excuse',
+    question: '为了让自己舒服一点，你给这件事找了什么理由？',
+    hint: '比如"我不是嫉妒，我只是客观分析""我不是害怕，我只是再等等"',
+    placeholder: '我给自己找的理由是...',
+  },
+  {
     id: 'stone',
-    question: '你捞到了什么石头？',
-    hint: '用一句话概括今天捞到的这块石头。比如"怕被看轻"、"渴望被认可"、"害怕失控"。这就是你今天的主石头。',
+    question: '今天，你从河底捞出来的那块石头是什么？',
+    hint: '只写一块，一句话。比如"怕被看轻""想证明自己更强"',
     placeholder: '今天的石头是...',
   },
   {
-    id: 'insight',
-    question: '看着这块石头，你想对自己说什么？',
-    hint: '不需要解决问题，不需要给答案。只是看着它，和它待一会儿。如果有什么话想对自己说，写下来。',
-    placeholder: '我想对自己说...',
+    id: 'choice',
+    question: '如果明天再遇到同样的事，你准备怎么选？',
+    hint: '前六步是在看石头，这一步，开始接近"人选"',
+    placeholder: '我准备...',
   },
 ];
+
+/** 获取今天的日期字符串 YYYY-MM-DD */
+const getTodayStr = () => new Date().toISOString().split('T')[0];
+
+/** 本地草稿的localStorage key */
+const getDraftKey = () => `diary_draft_${getTodayStr()}`;
 
 export default function DiaryPage() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -59,24 +90,89 @@ export default function DiaryPage() {
   const [saving, setSaving] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const [todayDone, setTodayDone] = useState(false);
+  const [todayStone, setTodayStone] = useState(''); // 今天的主石头（用于分享）
+
+  // PIN输入弹窗状态
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinResolve, setPinResolve] = useState<((key: CryptoKey | null) => void) | null>(null);
+
   const { user, cryptoKey, setCryptoKey } = useAppStore();
 
+  /**
+   * 页面加载时：
+   * 1. 检查今天是否已写过日记
+   * 2. 尝试恢复本地草稿
+   */
   useEffect(() => {
     checkTodayDiary();
+    restoreDraft();
   }, []);
 
+  /** 检查今天是否已写过日记 */
   const checkTodayDiary = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayStr();
       const res = await api.get('/api/diaries', { date: today });
       if (res.code === 0 && res.data.list && res.data.list.length > 0) {
         setTodayDone(true);
+        // 保存今天的主石头用于分享
+        if (res.data.list[0].mainStone) {
+          setTodayStone(res.data.list[0].mainStone);
+        }
       }
     } catch (err) {
-      // 忽略
+      // 静默失败，不影响写作
     }
   };
 
+  /** 从localStorage恢复草稿 */
+  const restoreDraft = () => {
+    try {
+      const draftStr = Taro.getStorageSync(getDraftKey());
+      if (draftStr) {
+        const draft = JSON.parse(draftStr);
+        if (draft.answers && draft.step !== undefined) {
+          setAnswers(draft.answers);
+          setCurrentStep(draft.step);
+          setCurrentText(draft.currentText || '');
+          Taro.showToast({ title: '已恢复上次写作进度', icon: 'none', duration: 2000 });
+        }
+      }
+    } catch (err) {
+      // 草稿恢复失败，从头开始
+    }
+  };
+
+  /**
+   * 保存草稿到localStorage
+   * 每次用户输入或切换步骤时自动调用
+   */
+  const saveDraft = useCallback((step: number, ans: Record<string, string>, text: string) => {
+    try {
+      const draft = { step, answers: ans, currentText: text, savedAt: Date.now() };
+      Taro.setStorageSync(getDraftKey(), JSON.stringify(draft));
+    } catch (err) {
+      // 存储失败静默处理
+    }
+  }, []);
+
+  /** 清除今天的草稿 */
+  const clearDraft = () => {
+    try {
+      Taro.removeStorageSync(getDraftKey());
+    } catch (err) {
+      // 静默处理
+    }
+  };
+
+  /** 处理文本输入 - 同时保存草稿 */
+  const handleTextInput = (value: string) => {
+    setCurrentText(value);
+    saveDraft(currentStep, answers, value);
+  };
+
+  /** 点击"继续深潜"或"捞出石头" */
   const handleNext = () => {
     if (!currentText.trim()) {
       Taro.showToast({ title: '写下你的感受再继续', icon: 'none' });
@@ -89,13 +185,20 @@ export default function DiaryPage() {
     setCurrentText('');
 
     if (currentStep < GUIDE_STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1);
+      // 还有下一步
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      saveDraft(nextStep, newAnswers, '');
     } else {
-      // 完成所有步骤
+      // 完成所有步骤，保存日记
       handleSave(newAnswers);
     }
   };
 
+  /**
+   * 保存日记 - 加密并上传
+   * @param allAnswers - 7层完整回答
+   */
   const handleSave = async (allAnswers: Record<string, string>) => {
     if (saving) return;
     setSaving(true);
@@ -104,36 +207,38 @@ export default function DiaryPage() {
       // 确保有加密密钥
       let key = cryptoKey;
       if (!key) {
-        // 需要用户输入PIN
-        const pinResult = await promptForPin();
-        if (!pinResult) {
+        // 需要用户输入PIN来派生密钥
+        key = await promptForPin();
+        if (!key) {
           setSaving(false);
           return;
         }
-        key = pinResult;
       }
 
-      // 加密日记内容
+      // 将所有回答序列化为JSON，然后加密
       const diaryContent = JSON.stringify(allAnswers);
       const { encryptedData, iv } = await encrypt(diaryContent, key);
 
-      // 生成主石头hash
+      // 提取主石头（第6层回答）并生成hash用于聚合
       const mainStone = allAnswers.stone || '';
       const mainStoneHash = await hashString(mainStone);
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayStr();
 
+      // 上传加密后的日记到服务器
       const res = await api.post('/api/diaries', {
         encryptedData,
         iv,
-        mainStone,
-        mainStoneHash,
+        mainStone,       // 主石头明文（用于石头收藏馆展示）
+        mainStoneHash,    // 主石头hash（用于相同石头聚合）
         diaryDate: today,
       });
 
       if (res.code === 0) {
         setShowComplete(true);
         setTodayDone(true);
+        setTodayStone(mainStone);
+        clearDraft(); // 保存成功后清除草稿
       } else {
         Taro.showToast({ title: res.message, icon: 'none' });
       }
@@ -145,43 +250,72 @@ export default function DiaryPage() {
     }
   };
 
+  /**
+   * 弹出PIN输入弹窗，返回派生的CryptoKey
+   * 使用自定义弹窗替代window.prompt，兼容所有平台
+   */
   const promptForPin = (): Promise<CryptoKey | null> => {
     return new Promise((resolve) => {
-      // 简化处理：在H5中使用prompt
-      const pin = window.prompt?.('请输入4位日记密码');
-      if (pin && pin.length === 4 && user?.salt) {
-        deriveKey(pin, user.salt).then(key => {
-          setCryptoKey(key);
-          resolve(key);
-        }).catch(() => {
-          Taro.showToast({ title: '密码错误', icon: 'none' });
-          resolve(null);
-        });
-      } else {
-        resolve(null);
-      }
+      setPinInput('');
+      setPinResolve(() => resolve);
+      setShowPinModal(true);
     });
   };
 
+  /** PIN输入确认 */
+  const handlePinConfirm = async () => {
+    if (pinInput.length !== 4 || !user?.salt || !pinResolve) return;
+
+    try {
+      const key = await deriveKey(pinInput, user.salt);
+      setCryptoKey(key);
+      setShowPinModal(false);
+      pinResolve(key);
+    } catch (err) {
+      Taro.showToast({ title: '密码错误', icon: 'none' });
+      setPinInput('');
+    }
+  };
+
+  /** PIN输入取消 */
+  const handlePinCancel = () => {
+    setShowPinModal(false);
+    if (pinResolve) pinResolve(null);
+  };
+
+  /** 跳转到日记历史列表 */
   const handleGoHistory = () => {
     Taro.navigateTo({ url: '/pages/diary-history/index' });
   };
 
+  /** 跳转到"今日一捞"分享页 */
+  const handleShareToday = () => {
+    const stone = todayStone || answers.stone || '';
+    Taro.navigateTo({
+      url: `/pages/share/index?type=daily&stone=${encodeURIComponent(stone)}`,
+    });
+  };
+
+  /** 重新开始写作（清除当前进度） */
   const handleRestart = () => {
     setCurrentStep(0);
     setAnswers({});
     setCurrentText('');
     setShowComplete(false);
     setTodayDone(false);
+    clearDraft();
   };
 
-  // 今天已写过
+  // ===== 渲染：今天已写过 =====
   if (todayDone && !showComplete) {
     return (
       <View className='diary-page'>
         <View className='done-state'>
           <View className='done-icon'>🪨</View>
           <Text className='done-title'>今天的石头已经捞过了</Text>
+          {todayStone && (
+            <Text className='done-stone'>「{todayStone}」</Text>
+          )}
           <Text className='done-hint'>明天再来，持续捞石头才能看清河底</Text>
           <View className='done-actions'>
             <View className='action-btn' onClick={handleGoHistory}>
@@ -190,13 +324,16 @@ export default function DiaryPage() {
             <View className='action-btn secondary' onClick={() => Taro.switchTab({ url: '/pages/riverbed/index' })}>
               <Text className='action-btn-text'>查看河床</Text>
             </View>
+            <View className='action-btn outline' onClick={handleShareToday}>
+              <Text className='action-btn-text'>分享今日一捞</Text>
+            </View>
           </View>
         </View>
       </View>
     );
   }
 
-  // 完成状态
+  // ===== 渲染：完成状态 =====
   if (showComplete) {
     return (
       <View className='diary-page'>
@@ -214,7 +351,10 @@ export default function DiaryPage() {
           </View>
           <Text className='complete-hint'>每一次捞石头，都是向河底更近一步</Text>
           <View className='complete-actions'>
-            <View className='action-btn' onClick={handleGoHistory}>
+            <View className='action-btn' onClick={handleShareToday}>
+              <Text className='action-btn-text'>分享今日一捞</Text>
+            </View>
+            <View className='action-btn secondary' onClick={handleGoHistory}>
               <Text className='action-btn-text'>查看道痕</Text>
             </View>
           </View>
@@ -223,11 +363,12 @@ export default function DiaryPage() {
     );
   }
 
-  // 写作状态
+  // ===== 渲染：写作状态 =====
   const step = GUIDE_STEPS[currentStep];
 
   return (
     <View className='diary-page'>
+      {/* 顶部标题和进度 */}
       <View className='diary-header'>
         <Text className='header-title'>捞石头</Text>
         <Text className='header-progress'>{currentStep + 1} / {GUIDE_STEPS.length}</Text>
@@ -254,7 +395,7 @@ export default function DiaryPage() {
           );
         })}
 
-        {/* 当前步骤 */}
+        {/* 当前步骤 - 引导式对话 */}
         <View className='current-step animate-fadeInUp'>
           <Text className='step-question'>{step.question}</Text>
           <Text className='step-hint'>{step.hint}</Text>
@@ -263,7 +404,7 @@ export default function DiaryPage() {
             placeholder={step.placeholder}
             placeholderClass='textarea-placeholder'
             value={currentText}
-            onInput={e => setCurrentText(e.detail.value)}
+            onInput={e => handleTextInput(e.detail.value)}
             autoFocus
             maxlength={1000}
           />
@@ -283,6 +424,40 @@ export default function DiaryPage() {
           </View>
         </View>
       </ScrollView>
+
+      {/* PIN码输入弹窗 - 自定义实现，兼容所有平台 */}
+      {showPinModal && (
+        <View className='pin-modal-overlay' onClick={handlePinCancel}>
+          <View className='pin-modal' onClick={e => e.stopPropagation()}>
+            <Text className='pin-modal-title'>请输入日记密码</Text>
+            <Text className='pin-modal-desc'>4位数字密码，用于加密你的道痕</Text>
+            <View className='pin-dots'>
+              {[0, 1, 2, 3].map(i => (
+                <View key={i} className={`pin-dot ${i < pinInput.length ? 'filled' : ''}`} />
+              ))}
+            </View>
+            <Input
+              className='pin-input-hidden'
+              type='number'
+              maxlength={4}
+              focus
+              value={pinInput}
+              onInput={e => setPinInput(e.detail.value.replace(/\D/g, '').slice(0, 4))}
+            />
+            <View className='pin-modal-actions'>
+              <View className='pin-modal-btn cancel' onClick={handlePinCancel}>
+                <Text className='pin-modal-btn-text'>取消</Text>
+              </View>
+              <View
+                className={`pin-modal-btn confirm ${pinInput.length !== 4 ? 'disabled' : ''}`}
+                onClick={handlePinConfirm}
+              >
+                <Text className='pin-modal-btn-text'>确认</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }

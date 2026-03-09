@@ -1,3 +1,16 @@
+/**
+ * 河水日历页 - 打卡记录可视化
+ *
+ * 功能说明：
+ * - 顶部醒目展示"已连续捞石头XX天"（朱砂色大字 + 火焰图标）
+ * - 三列统计：连续天数、累计天数、本月天数
+ * - 月历视图：已打卡日期显示水墨晕染标记
+ * - 支持切换月份查看历史打卡记录
+ * - 底部根据连续天数显示不同的鼓励语
+ *
+ * 数据来源：
+ * - GET /api/diaries/checkins - 返回打卡日期列表和统计数据
+ */
 import { useState, useEffect } from 'react';
 import Taro from '@tarojs/taro';
 import { View, Text } from '@tarojs/components';
@@ -14,11 +27,11 @@ export default function CalendarPage() {
     fetchCheckins();
   }, []);
 
+  /** 获取打卡数据 */
   const fetchCheckins = async () => {
     try {
       const res = await api.get('/api/diaries/checkins');
       if (res.code === 0) {
-        // 从checkins数组中提取日期列表
         const dates = (res.data.checkins || []).map((c: any) => c.checkinDate);
         setCheckinDates(dates);
         setStreakDays(res.data.currentStreak || 0);
@@ -29,18 +42,22 @@ export default function CalendarPage() {
     }
   };
 
+  /** 获取指定月份的天数 */
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
 
+  /** 获取指定月份第一天是星期几（0=周日） */
   const getFirstDayOfMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
+  /** 切换到上一个月 */
   const prevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
   };
 
+  /** 切换到下一个月（不能超过当前月） */
   const nextMonth = () => {
     const now = new Date();
     const next = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
@@ -49,11 +66,13 @@ export default function CalendarPage() {
     }
   };
 
+  /** 判断某天是否已打卡 */
   const isCheckedIn = (day: number) => {
     const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return checkinDates.includes(dateStr);
   };
 
+  /** 判断某天是否是今天 */
   const isToday = (day: number) => {
     const now = new Date();
     return (
@@ -68,11 +87,24 @@ export default function CalendarPage() {
   const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
   const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
 
-  // 计算本月打卡天数
+  /** 计算本月打卡天数 */
   const monthCheckins = Array.from({ length: daysInMonth }, (_, i) => i + 1).filter(d => isCheckedIn(d)).length;
+
+  /**
+   * 根据连续天数生成鼓励语
+   * 不同阶段给予不同的文字激励
+   */
+  const getEncourageText = () => {
+    if (streakDays >= 100) return '百日不断，河底已清澈见底。你已不是从前的你。';
+    if (streakDays >= 30) return '三十天不断，河底已渐清。你正在改变。';
+    if (streakDays >= 7) return '连续七天，水面已起波澜。继续深潜。';
+    if (streakDays >= 1) return '每一天的坚持，都让河水更清一分。';
+    return '今天，去捞一块石头吧。';
+  };
 
   return (
     <View className='calendar-page'>
+      {/* 顶部导航 */}
       <View className='page-header'>
         <View className='nav-back' onClick={() => Taro.navigateBack()}>
           <Text className='back-icon'>←</Text>
@@ -81,7 +113,17 @@ export default function CalendarPage() {
         <View className='placeholder' />
       </View>
 
-      {/* 统计卡片 */}
+      {/* 醒目的连续打卡天数展示 - 需求要求的核心激励元素 */}
+      <View className='streak-hero'>
+        <View className='streak-flame'>🔥</View>
+        <View className='streak-info'>
+          <Text className='streak-number'>{streakDays}</Text>
+          <Text className='streak-label'>已连续捞石头</Text>
+        </View>
+        <Text className='streak-unit'>天</Text>
+      </View>
+
+      {/* 三列统计卡片 */}
       <View className='stats-row'>
         <View className='stat-card'>
           <Text className='stat-number'>{streakDays}</Text>
@@ -97,7 +139,7 @@ export default function CalendarPage() {
         </View>
       </View>
 
-      {/* 日历 */}
+      {/* 月历视图 */}
       <View className='calendar-container'>
         {/* 月份导航 */}
         <View className='month-nav'>
@@ -112,7 +154,7 @@ export default function CalendarPage() {
           </View>
         </View>
 
-        {/* 星期头 */}
+        {/* 星期头部 */}
         <View className='week-header'>
           {weekDays.map(day => (
             <View key={day} className='week-cell'>
@@ -123,12 +165,12 @@ export default function CalendarPage() {
 
         {/* 日期格子 */}
         <View className='days-grid'>
-          {/* 空白格子 */}
+          {/* 月初空白格子 */}
           {Array.from({ length: firstDay }, (_, i) => (
             <View key={`empty-${i}`} className='day-cell empty' />
           ))}
 
-          {/* 日期格子 */}
+          {/* 日期格子 - 已打卡日期显示水墨晕染效果 */}
           {Array.from({ length: daysInMonth }, (_, i) => {
             const day = i + 1;
             const checked = isCheckedIn(day);
@@ -146,18 +188,7 @@ export default function CalendarPage() {
 
       {/* 鼓励语 */}
       <View className='encourage-section'>
-        {streakDays >= 30 && (
-          <Text className='encourage-text'>三十天不断，河底已渐清。你正在改变。</Text>
-        )}
-        {streakDays >= 7 && streakDays < 30 && (
-          <Text className='encourage-text'>连续七天，水面已起波澜。继续深潜。</Text>
-        )}
-        {streakDays >= 1 && streakDays < 7 && (
-          <Text className='encourage-text'>每一天的坚持，都让河水更清一分。</Text>
-        )}
-        {streakDays === 0 && (
-          <Text className='encourage-text'>今天，去捞一块石头吧。</Text>
-        )}
+        <Text className='encourage-text'>{getEncourageText()}</Text>
       </View>
     </View>
   );

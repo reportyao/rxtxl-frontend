@@ -1,3 +1,10 @@
+/**
+ * 个人中心页样式
+ * - 用户信息卡片（渐变头像）
+ * - 三列数据统计栏
+ * - 菜单列表（支持分隔线）
+ * - 修改密码弹窗
+ */
 .profile-page {
   min-height: 100vh;
   background-color: var(--color-bg);
@@ -86,6 +93,12 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   }
 
+  // 菜单分隔线 - 用于分组
+  .menu-divider {
+    height: 8px;
+    background-color: var(--color-bg);
+  }
+
   .menu-item {
     display: flex;
     align-items: center;
@@ -154,4 +167,103 @@
       color: var(--color-text-hint);
     }
   }
+
+  // ===== 修改密码弹窗 =====
+  .pin-change-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .pin-change-modal {
+    width: 300px;
+    background: var(--color-bg);
+    border-radius: var(--radius-lg);
+    padding: 32px 24px;
+    text-align: center;
+
+    .pin-change-title {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 18px;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+
+    .pin-change-desc {
+      display: block;
+      font-size: 13px;
+      color: var(--color-text-hint);
+      margin-bottom: 24px;
+    }
+
+    .pin-dots {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 24px;
+
+      .pin-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid var(--color-border);
+        transition: all 0.2s ease;
+
+        &.filled {
+          background-color: var(--color-primary);
+          border-color: var(--color-primary);
+        }
+      }
+    }
+
+    .pin-input-hidden {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+    }
+
+    .pin-change-actions {
+      display: flex;
+      gap: 12px;
+
+      .pin-change-btn {
+        flex: 1;
+        padding: 10px 0;
+        border-radius: 24px;
+        text-align: center;
+
+        &.cancel {
+          background: var(--color-card);
+          .pin-change-btn-text { color: var(--color-text-secondary); }
+        }
+
+        &.confirm {
+          background: var(--color-primary);
+          .pin-change-btn-text { color: #fff; }
+
+          &.disabled {
+            background: var(--color-border);
+            pointer-events: none;
+          }
+        }
+
+        &:active { opacity: 0.8; }
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
