@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Taro from '@tarojs/taro';
 import { View, Text, Input } from '@tarojs/components';
 import { api } from '../../utils/request';
@@ -13,14 +13,35 @@ export default function PinSetupPage() {
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [loading, setLoading] = useState(false);
+  const [inputFocus, setInputFocus] = useState(false);
   const { setUser, setCryptoKey } = useAppStore();
+  
+  // 使用 ref 来强制控制输入框焦点
+  const inputRef = useRef<any>(null);
+
+  // 切换步骤时重置焦点
+  useEffect(() => {
+    if (step === 'input' || step === 'confirm') {
+      // 延迟设置焦点，确保 DOM 已渲染
+      setTimeout(() => {
+        setInputFocus(true);
+      }, 300);
+    } else {
+      setInputFocus(false);
+    }
+  }, [step]);
 
   // 处理PIN输入
   const handlePinInput = (value: string) => {
     const cleaned = value.replace(/\D/g, '').slice(0, 4);
     setPin(cleaned);
     if (cleaned.length === 4) {
-      setTimeout(() => setStep('confirm'), 300);
+      // 输入完成后，先失焦，再切换步骤
+      setInputFocus(false);
+      setTimeout(() => {
+        setStep('confirm');
+        setConfirmPin(''); // 确保确认位为空
+      }, 300);
     }
   };
 
@@ -30,12 +51,24 @@ export default function PinSetupPage() {
     setConfirmPin(cleaned);
     if (cleaned.length === 4) {
       if (cleaned === pin) {
+        setInputFocus(false);
         setStep('warning');
       } else {
         Taro.showToast({ title: '两次输入不一致，请重新输入', icon: 'none' });
+        // 不一致时，清空确认位并保持在当前步骤，重新触发焦点
         setConfirmPin('');
+        setInputFocus(false);
+        setTimeout(() => setInputFocus(true), 100);
       }
     }
+  };
+
+  // 重新设置逻辑
+  const handleReset = () => {
+    setPin('');
+    setConfirmPin('');
+    setInputFocus(false);
+    setStep('input');
   };
 
   // 确认设置PIN
@@ -67,7 +100,7 @@ export default function PinSetupPage() {
   };
 
   return (
-    <View className='pin-setup-page'>
+    <View className='pin-setup-page' onClick={() => (step === 'input' || step === 'confirm') && setInputFocus(true)}>
       {/* 步骤1：加密介绍 */}
       {step === 'intro' && (
         <View className='step-content animate-fadeIn'>
@@ -79,7 +112,7 @@ export default function PinSetupPage() {
             </Text>
             <Text className='desc-highlight'>你的河底，只属于你自己。</Text>
           </View>
-          <View className='next-btn' onClick={() => setStep('input')}>
+          <View className='next-btn' onClick={(e) => { e.stopPropagation(); setStep('input'); }}>
             <Text className='next-btn-text'>设置日记密码</Text>
           </View>
         </View>
@@ -99,9 +132,10 @@ export default function PinSetupPage() {
             className='pin-input-hidden'
             type='number'
             maxlength={4}
-            focus
+            focus={inputFocus}
             value={pin}
             onInput={e => handlePinInput(e.detail.value)}
+            onBlur={() => setInputFocus(false)}
           />
         </View>
       )}
@@ -120,11 +154,12 @@ export default function PinSetupPage() {
             className='pin-input-hidden'
             type='number'
             maxlength={4}
-            focus
+            focus={inputFocus}
             value={confirmPin}
             onInput={e => handleConfirmInput(e.detail.value)}
+            onBlur={() => setInputFocus(false)}
           />
-          <View className='back-link' onClick={() => { setPin(''); setConfirmPin(''); setStep('input'); }}>
+          <View className='back-link' onClick={(e) => { e.stopPropagation(); handleReset(); }}>
             <Text className='back-link-text'>重新设置</Text>
           </View>
         </View>
@@ -142,7 +177,7 @@ export default function PinSetupPage() {
           </View>
           <View
             className={`confirm-btn ${loading ? 'disabled' : ''}`}
-            onClick={handleConfirmSetup}
+            onClick={(e) => { e.stopPropagation(); handleConfirmSetup(); }}
           >
             <Text className='confirm-btn-text'>
               {loading ? '设置中...' : '我已牢记，开始捞石头'}
