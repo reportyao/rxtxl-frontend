@@ -96,7 +96,11 @@ export default function ProfilePage() {
    * 1. 输入旧密码验证
    * 2. 输入新密码
    * 3. 确认新密码
-   * 4. 调用API更新
+   * 4. 警告用户旧日记将无法解密
+   * 5. 调用API更新
+   *
+   * [BUG FIX] v1.1: 修改密码会导致旧日记无法解密（端到端加密架构的固有限制）。
+   * 必须在确认步骤后增加明确警告，让用户知情后再决定。
    */
   const handleChangePinNext = async () => {
     if (changePinStep === 'old') {
@@ -125,30 +129,43 @@ export default function ProfilePage() {
         return;
       }
 
-      // 提交新密码
-      // [BUG FIX] 原来调用的是 reset-pin 接口，该接口需要手机号+验证码且会清除所有日记。
-      // 修改密码应该使用 set-pin 接口（已通过旧密码验证身份）。
-      setChangePinLoading(true);
-      try {
-        const newPinHash = await hashPin(newPin, user?.salt || '');
-        const res = await api.post('/api/auth/set-pin', {
-          pinHash: newPinHash,
-          salt: user?.salt || '',
-        });
-        if (res.code === 0) {
-          // 更新本地加密密钥
-          const newKey = await deriveKey(newPin, user?.salt || '');
-          setCryptoKey(newKey);
-          setShowChangePinModal(false);
-          Taro.showToast({ title: '密码修改成功', icon: 'success' });
-        } else {
-          Taro.showToast({ title: res.message || '修改失败', icon: 'none' });
-        }
-      } catch (err) {
-        Taro.showToast({ title: '修改失败', icon: 'none' });
-      } finally {
-        setChangePinLoading(false);
+      // [BUG FIX] 修改密码前必须警告用户：旧日记将无法解密
+      Taro.showModal({
+        title: '重要提醒',
+        content: '修改密码后，之前用旧密码加密的日记将无法解密查看。\n\n这是端到端加密的安全机制，即使是我们也无法恢复。\n\n确定要修改密码吗？',
+        confirmText: '确定修改',
+        cancelText: '取消',
+        confirmColor: '#C0392B',
+        success: async (modalRes) => {
+          if (!modalRes.confirm) return;
+          await doChangePin();
+        },
+      });
+    }
+  };
+
+  /** 执行密码修改 */
+  const doChangePin = async () => {
+    setChangePinLoading(true);
+    try {
+      const newPinHash = await hashPin(newPin, user?.salt || '');
+      const res = await api.post('/api/auth/set-pin', {
+        pinHash: newPinHash,
+        salt: user?.salt || '',
+      });
+      if (res.code === 0) {
+        // 更新本地加密密钥
+        const newKey = await deriveKey(newPin, user?.salt || '');
+        setCryptoKey(newKey);
+        setShowChangePinModal(false);
+        Taro.showToast({ title: '密码修改成功', icon: 'success' });
+      } else {
+        Taro.showToast({ title: res.message || '修改失败', icon: 'none' });
       }
+    } catch (err) {
+      Taro.showToast({ title: '修改失败', icon: 'none' });
+    } finally {
+      setChangePinLoading(false);
     }
   };
 
