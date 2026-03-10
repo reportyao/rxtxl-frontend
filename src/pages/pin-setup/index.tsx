@@ -21,7 +21,7 @@ export default function PinSetupPage() {
     setPin(val);
   };
 
-  const handlePinComplete = (val: string) => {
+  const handlePinComplete = (_val: string) => {
     setTimeout(() => setStep('confirm'), 200);
   };
 

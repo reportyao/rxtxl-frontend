@@ -25,6 +25,7 @@
 
 import { create } from 'zustand';
 import Taro from '@tarojs/taro';
+import type { CryptoKey } from '../utils/crypto';
 
 /**
  * 用户信息类型定义
@@ -40,6 +41,7 @@ import Taro from '@tarojs/taro';
 interface UserInfo {
   id: string;
   phone: string;
+  username?: string;
   nickname: string;
   avatar: string | null;
   hasPinSet: boolean;
@@ -58,7 +60,7 @@ interface AppState {
   user: UserInfo | null;
   /** 是否已登录（token和user都存在时为true） */
   isLoggedIn: boolean;
-  /** AES-256加密密钥（由PIN码通过PBKDF2派生，不持久化） */
+  /** AES-256加密密钥（由PIN码通过PBKDF2派生，不持久化，类型为CryptoJS.lib.WordArray） */
   cryptoKey: CryptoKey | null;
 
   // ===== 操作方法 =====

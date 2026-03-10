@@ -25,6 +25,7 @@ import { View, Text, Textarea, ScrollView } from '@tarojs/components';
 import { api } from '../../utils/request';
 import { useAppStore } from '../../store';
 import { deriveKey, encrypt, hashString } from '../../utils/crypto';
+import type { CryptoKey } from '../../utils/crypto';
 import PinKeyboard from '../../components/PinKeyboard';
 import './index.scss';
 
@@ -276,21 +277,6 @@ export default function DiaryPage() {
       setPinResolve(() => resolve);
       setShowPinModal(true);
     });
-  };
-
-  /** PIN输入确认 */
-  const handlePinConfirm = async () => {
-    if (pinInput.length !== 4 || !user?.salt || !pinResolve) return;
-
-    try {
-      const key = await deriveKey(pinInput, user.salt);
-      setCryptoKey(key);
-      setShowPinModal(false);
-      pinResolve(key);
-    } catch (err) {
-      Taro.showToast({ title: '密码错误', icon: 'none' });
-      setPinInput('');
-    }
   };
 
   /** PIN输入完成（4位）自动确认 */

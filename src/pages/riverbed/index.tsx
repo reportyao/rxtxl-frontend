@@ -19,7 +19,7 @@
  * - 点击空白处：关闭弹窗
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Taro, { useDidShow } from '@tarojs/taro';
 import { View, Text } from '@tarojs/components';
 import { api } from '../../utils/request';
@@ -80,8 +80,6 @@ export default function RiverbedPage() {
   const [loading, setLoading] = useState(true);
   const [selectedStone, setSelectedStone] = useState<StoneData | null>(null);
   const [stoneNodes, setStoneNodes] = useState<StoneNode[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     fetchStones();
   }, []);

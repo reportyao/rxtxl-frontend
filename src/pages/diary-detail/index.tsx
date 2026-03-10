@@ -7,12 +7,13 @@
  * - 使用PinKeyboard组件替代隐藏Input，解决移动端密码输入兼容性问题
  * - [v1.2] 增加分享功能，可生成精美长图分享
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { View, Text, ScrollView } from '@tarojs/components';
 import { api } from '../../utils/request';
 import { useAppStore } from '../../store';
-import { deriveKey, decrypt, hashPin } from '../../utils/crypto';
+import { deriveKey, decrypt } from '../../utils/crypto';
+import type { CryptoKey } from '../../utils/crypto';
 import PinKeyboard from '../../components/PinKeyboard';
 import './index.scss';
 
@@ -78,7 +79,7 @@ export default function DiaryDetailPage() {
     }
   };
 
-  const decryptDiary = async (data: DiaryData, key: CryptoKey) => {
+  const decryptDiary = async (data: DiaryData, key: CryptoKey) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     setDecrypting(true);
     try {
       const plaintext = await decrypt(data.encryptedData, data.iv, key);
