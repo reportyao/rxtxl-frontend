@@ -95,12 +95,31 @@ export default function DiaryDetailPage() {
 
   /** PIN输入完成自动解锁 */
   const handlePinComplete = async (val: string) => {
-    if (!diary || !user?.salt) return;
+    if (!diary) return;
 
     setDecrypting(true);
     setPinError('');
     try {
-      const key = await deriveKey(val, user.salt);
+      // 如果 user.salt 不存在（旧登录态），先从 /api/auth/me 获取
+      let salt = user?.salt;
+      if (!salt) {
+        try {
+          const meRes = await api.get('/api/auth/me');
+          if (meRes.code === 0 && meRes.data?.salt) {
+            salt = meRes.data.salt;
+            // 更新 store 中的 user，补充 salt
+            useAppStore.getState().setUser({ salt: meRes.data.salt });
+          }
+        } catch (_e) {
+          // ignore
+        }
+      }
+      if (!salt) {
+        setPinError('无法获取加密盐值，请重新登录');
+        setPinInput('');
+        return;
+      }
+      const key = await deriveKey(val, salt);
       const plaintext = await decrypt(diary.encryptedData, diary.iv, key);
       const content = JSON.parse(plaintext);
       setCryptoKey(key);

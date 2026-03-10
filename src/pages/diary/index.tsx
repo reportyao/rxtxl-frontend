@@ -281,9 +281,28 @@ export default function DiaryPage() {
 
   /** PIN输入完成（4位）自动确认 */
   const handlePinComplete = async (val: string) => {
-    if (!user?.salt || !pinResolve) return;
+    if (!pinResolve) return;
     try {
-      const key = await deriveKey(val, user.salt);
+      // 如果 user.salt 不存在（旧登录态），先从 /api/auth/me 获取
+      let salt = user?.salt;
+      if (!salt) {
+        try {
+          const meRes = await api.get('/api/auth/me');
+          if (meRes.code === 0 && meRes.data?.salt) {
+            salt = meRes.data.salt;
+            useAppStore.getState().setUser({ salt: meRes.data.salt });
+          }
+        } catch (_e) {
+          // ignore
+        }
+      }
+      if (!salt) {
+        Taro.showToast({ title: '无法获取加密盐值，请重新登录', icon: 'none' });
+        setPinInput('');
+        pinResolve(null);
+        return;
+      }
+      const key = await deriveKey(val, salt);
       setCryptoKey(key);
       setShowPinModal(false);
       pinResolve(key);
