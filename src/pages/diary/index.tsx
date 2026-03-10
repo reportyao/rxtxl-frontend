@@ -6,7 +6,7 @@
  * - 本地草稿实时保存到localStorage，中途退出可恢复
  * - 完成后使用AES-256加密日记内容并上传服务器
  * - 完成页面提供"分享今日一捞"入口
- * - 已写过当天日记时显示已完成状态
+ * - [v1.2] 支持一日多条日记：已写过当天日记后显示"再记一条"按钮
  *
  * 加密流程：
  * 1. 用户完成7层写作
@@ -94,7 +94,9 @@ export default function DiaryPage() {
   const [saving, setSaving] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const [todayDone, setTodayDone] = useState(false);
-  const [todayStone, setTodayStone] = useState(''); // 今天的主石头（用于分享）
+  const [todayStone, setTodayStone] = useState('');
+  const [todayCount, setTodayCount] = useState(0); // 今天已写的日记数量
+  const [isWritingNew, setIsWritingNew] = useState(false); // 是否正在写新的一条
 
   // PIN输入弹窗状态
   const [showPinModal, setShowPinModal] = useState(false);
@@ -113,16 +115,18 @@ export default function DiaryPage() {
     restoreDraft();
   }, []);
 
-  /** 检查今天是否已写过日记 */
+  /** 检查今天已写过多少条日记 */
   const checkTodayDiary = async () => {
     try {
       const today = getTodayStr();
       const res = await api.get('/api/diaries', { date: today });
       if (res.code === 0 && res.data.list && res.data.list.length > 0) {
         setTodayDone(true);
-        // 保存今天的主石头用于分享
-        if (res.data.list[0].mainStone) {
-          setTodayStone(res.data.list[0].mainStone);
+        setTodayCount(res.data.list.length);
+        // 保存最新一条的主石头用于分享
+        const latestDiary = res.data.list[0]; // list按日期降序，第一条是最新的
+        if (latestDiary.mainStone) {
+          setTodayStone(latestDiary.mainStone);
         }
       }
     } catch (err) {
@@ -233,8 +237,8 @@ export default function DiaryPage() {
       const res = await api.post('/api/diaries', {
         encryptedData,
         iv,
-        mainStone,       // 主石头明文（用于石头收藏馆展示）
-        mainStoneHash,    // 主石头hash（用于相同石头聚合）
+        mainStone,
+        mainStoneHash,
         diaryDate: today,
       });
 
@@ -242,8 +246,10 @@ export default function DiaryPage() {
         setShowComplete(true);
         setTodayDone(true);
         setTodayStone(mainStone);
-        clearDraft(); // 保存成功后清除草稿
-        // 保存成功后刷新用户的连续天数（从服务器获取最新值）
+        setTodayCount(prev => prev + 1);
+        setIsWritingNew(false);
+        clearDraft();
+        // 保存成功后刷新用户的连续天数
         try {
           const checkinRes = await api.get('/api/diaries/checkins');
           if (checkinRes.code === 0 && checkinRes.data) {
@@ -263,7 +269,6 @@ export default function DiaryPage() {
 
   /**
    * 弹出PIN输入弹窗，返回派生的CryptoKey
-   * 使用自定义弹窗替代window.prompt，兼容所有平台
    */
   const promptForPin = (): Promise<CryptoKey | null> => {
     return new Promise((resolve) => {
@@ -322,28 +327,35 @@ export default function DiaryPage() {
     });
   };
 
-  /** 重新开始写作（清除当前进度） */
-  const handleRestart = () => {
+  /** 再记一条日记 - 重置写作状态但不清除todayDone */
+  const handleWriteAnother = () => {
     setCurrentStep(0);
     setAnswers({});
     setCurrentText('');
     setShowComplete(false);
-    setTodayDone(false);
+    setIsWritingNew(true);
     clearDraft();
   };
 
-  // ===== 渲染：今天已写过 =====
-  if (todayDone && !showComplete) {
+  // ===== 渲染：今天已写过且不在写新的 =====
+  if (todayDone && !showComplete && !isWritingNew) {
     return (
       <View className='diary-page'>
         <View className='done-state'>
           <View className='done-icon'>🪨</View>
-          <Text className='done-title'>今天的石头已经捞过了</Text>
+          <Text className='done-title'>
+            {todayCount > 1
+              ? `今天已经捞了 ${todayCount} 块石头`
+              : '今天的石头已经捞过了'}
+          </Text>
           {todayStone && (
             <Text className='done-stone'>「{todayStone}」</Text>
           )}
-          <Text className='done-hint'>明天再来，持续捞石头才能看清河底</Text>
+          <Text className='done-hint'>每一次捞石头，都是向河底更近一步</Text>
           <View className='done-actions'>
+            <View className='action-btn primary' onClick={handleWriteAnother}>
+              <Text className='action-btn-text'>再记一条日记</Text>
+            </View>
             <View className='action-btn' onClick={handleGoHistory}>
               <Text className='action-btn-text'>回看道痕</Text>
             </View>
@@ -377,6 +389,9 @@ export default function DiaryPage() {
           </View>
           <Text className='complete-hint'>每一次捞石头，都是向河底更近一步</Text>
           <View className='complete-actions'>
+            <View className='action-btn primary' onClick={handleWriteAnother}>
+              <Text className='action-btn-text'>再记一条日记</Text>
+            </View>
             <View className='action-btn' onClick={handleShareToday}>
               <Text className='action-btn-text'>分享今日一捞</Text>
             </View>

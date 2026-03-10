@@ -1,16 +1,23 @@
-import { useState, useEffect } from 'react';
+/**
+ * 道痕详情页 - 查看单条日记的完整内容
+ *
+ * 功能说明：
+ * - 显示日记日期和主石头
+ * - 需要输入PIN密码解密查看完整内容
+ * - 使用PinKeyboard组件替代隐藏Input，解决移动端密码输入兼容性问题
+ * - [v1.2] 增加分享功能，可生成精美长图分享
+ */
+import { useState, useEffect, useRef } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
-import { View, Text, ScrollView, Input } from '@tarojs/components';
+import { View, Text, ScrollView } from '@tarojs/components';
 import { api } from '../../utils/request';
 import { useAppStore } from '../../store';
 import { deriveKey, decrypt, hashPin } from '../../utils/crypto';
+import PinKeyboard from '../../components/PinKeyboard';
 import './index.scss';
 
 /**
- * [BUG FIX] 原来的STEP_LABELS的key与日记页的GUIDE_STEPS id不匹配。
- * GUIDE_STEPS使用的id是: event, reaction, greed, fear, excuse, stone, choice
- * 原来的key是: event, emotion, thought, fear, desire, stone, insight
- * 导致解密后显示的标签大部分为原始key而非可读文本。
+ * STEP_LABELS的key与日记页的GUIDE_STEPS id匹配
  */
 const STEP_LABELS: Record<string, string> = {
   event: '今天，什么事让你的河面起了波澜',
@@ -21,6 +28,9 @@ const STEP_LABELS: Record<string, string> = {
   stone: '今天捞出来的石头',
   choice: '明天再遇到，你准备怎么选',
 };
+
+/** 步骤顺序（确保渲染顺序一致） */
+const STEP_ORDER = ['event', 'reaction', 'greed', 'fear', 'excuse', 'stone', 'choice'];
 
 interface DiaryData {
   id: string;
@@ -40,6 +50,8 @@ export default function DiaryDetailPage() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
+  const [pinShake, setPinShake] = useState(false);
+  const [generatingShare, setGeneratingShare] = useState(false);
   const { user, cryptoKey, setCryptoKey } = useAppStore();
 
   useEffect(() => {
@@ -80,20 +92,14 @@ export default function DiaryDetailPage() {
     }
   };
 
-  const handlePinInput = (value: string) => {
-    const cleaned = value.replace(/\D/g, '').slice(0, 4);
-    setPinInput(cleaned);
-    setPinError('');
-  };
-
-  const handleUnlock = async () => {
-    if (!diary || !user?.salt || pinInput.length !== 4) return;
+  /** PIN输入完成自动解锁 */
+  const handlePinComplete = async (val: string) => {
+    if (!diary || !user?.salt) return;
 
     setDecrypting(true);
     setPinError('');
     try {
-      const key = await deriveKey(pinInput, user.salt);
-      // 先尝试解密，如果成功说明PIN正确
+      const key = await deriveKey(val, user.salt);
       const plaintext = await decrypt(diary.encryptedData, diary.iv, key);
       const content = JSON.parse(plaintext);
       setCryptoKey(key);
@@ -103,17 +109,168 @@ export default function DiaryDetailPage() {
     } catch (err) {
       setPinError('密码错误，请重新输入');
       setPinInput('');
+      setPinShake(true);
+      setTimeout(() => setPinShake(false), 500);
     } finally {
       setDecrypting(false);
     }
   };
 
   /**
-   * [BUG FIX] YYYY-MM-DD格式在new Date()中被解析为UTC，东八区可能偏差一天
+   * 解析日记日期字符串（本地时区）
    */
   const formatDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split('-').map(Number);
     return `${year}年${month}月${day}日`;
+  };
+
+  /**
+   * 生成分享长图
+   * 使用Canvas将日记内容渲染为精美长图
+   */
+  const handleShare = async () => {
+    if (!diary || !decryptedContent) {
+      Taro.showToast({ title: '请先解锁日记内容', icon: 'none' });
+      return;
+    }
+
+    setGeneratingShare(true);
+    try {
+      // 使用DOM方式生成分享图片
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      const dpr = 2; // 高清
+      const canvasWidth = 750;
+      const padding = 60;
+      const contentWidth = canvasWidth - padding * 2;
+
+      // 预计算内容高度
+      ctx.font = '28px serif';
+      let totalHeight = 0;
+      totalHeight += 120; // 顶部留白
+      totalHeight += 60;  // 日期
+      totalHeight += 80;  // 主石头
+      totalHeight += 40;  // 分隔线
+
+      const entries = STEP_ORDER
+        .filter(key => decryptedContent[key])
+        .map(key => ({ key, label: STEP_LABELS[key] || key, value: decryptedContent[key] }));
+
+      for (const entry of entries) {
+        totalHeight += 50; // label
+        // 估算文本行数
+        const lines = Math.ceil(ctx.measureText(entry.value).width / (contentWidth - 20));
+        totalHeight += Math.max(lines, 1) * 42 + 30; // 内容 + 间距
+      }
+
+      totalHeight += 120; // 底部二维码区域
+      totalHeight += 80;  // 底部留白
+
+      canvas.width = canvasWidth * dpr;
+      canvas.height = totalHeight * dpr;
+      ctx.scale(dpr, dpr);
+
+      // 背景
+      ctx.fillStyle = '#F7F4ED';
+      ctx.fillRect(0, 0, canvasWidth, totalHeight);
+
+      // 顶部装饰线
+      ctx.strokeStyle = '#D4CFC4';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padding, 80);
+      ctx.lineTo(canvasWidth - padding, 80);
+      ctx.stroke();
+
+      let y = 120;
+
+      // 日期
+      ctx.fillStyle = '#8A8A8A';
+      ctx.font = '24px "Noto Serif SC", serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(formatDate(diary.diaryDate), canvasWidth / 2, y);
+      y += 60;
+
+      // 主石头
+      ctx.fillStyle = '#8B6F4E';
+      ctx.font = 'bold 32px "Noto Serif SC", serif';
+      ctx.fillText(`「${diary.mainStone}」`, canvasWidth / 2, y);
+      y += 50;
+
+      // 分隔线
+      ctx.strokeStyle = '#D4CFC4';
+      ctx.beginPath();
+      ctx.moveTo(canvasWidth / 2 - 60, y);
+      ctx.lineTo(canvasWidth / 2 + 60, y);
+      ctx.stroke();
+      y += 40;
+
+      // 内容区域
+      ctx.textAlign = 'left';
+      for (const entry of entries) {
+        // 标签
+        ctx.fillStyle = '#B8B0A8';
+        ctx.font = '22px "Noto Sans SC", sans-serif';
+        ctx.fillText(entry.label, padding, y);
+        y += 36;
+
+        // 内容 - 自动换行
+        ctx.fillStyle = '#2C2C2C';
+        ctx.font = '26px "Noto Serif SC", serif';
+        const words = entry.value.split('');
+        let line = '';
+        for (let i = 0; i < words.length; i++) {
+          const testLine = line + words[i];
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > contentWidth && i > 0) {
+            ctx.fillText(line, padding + 10, y);
+            line = words[i];
+            y += 38;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, padding + 10, y);
+        y += 50;
+      }
+
+      // 底部分隔线
+      y += 20;
+      ctx.strokeStyle = '#D4CFC4';
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(canvasWidth - padding, y);
+      ctx.stroke();
+      y += 30;
+
+      // 底部品牌信息
+      ctx.fillStyle = '#B8B0A8';
+      ctx.font = '20px "Noto Sans SC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('人选天选论 · rxtxl.com', canvasWidth / 2, y);
+      y += 30;
+      ctx.fillStyle = '#D4CFC4';
+      ctx.font = '18px "Noto Sans SC", sans-serif';
+      ctx.fillText('每天捞一块石头，看清自己的河底', canvasWidth / 2, y);
+
+      // 导出图片
+      const dataUrl = canvas.toDataURL('image/png');
+
+      // 创建下载链接
+      const link = document.createElement('a');
+      link.download = `道痕-${diary.diaryDate}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      Taro.showToast({ title: '图片已保存', icon: 'success' });
+    } catch (err) {
+      console.error('生成分享图片失败:', err);
+      Taro.showToast({ title: '生成失败，请重试', icon: 'none' });
+    } finally {
+      setGeneratingShare(false);
+    }
   };
 
   if (loading) {
@@ -143,7 +300,14 @@ export default function DiaryDetailPage() {
           <Text className='back-icon'>←</Text>
         </View>
         <Text className='page-title'>{formatDate(diary.diaryDate)}</Text>
-        <View className='placeholder' />
+        {/* 分享按钮 */}
+        {decryptedContent ? (
+          <View className='share-btn' onClick={handleShare}>
+            <Text className='share-btn-text'>{generatingShare ? '...' : '分享'}</Text>
+          </View>
+        ) : (
+          <View className='placeholder' />
+        )}
       </View>
 
       <ScrollView className='detail-content' scrollY>
@@ -156,12 +320,25 @@ export default function DiaryDetailPage() {
         {/* 解密内容 */}
         {decryptedContent ? (
           <View className='decrypted-content animate-fadeIn'>
-            {Object.entries(decryptedContent).map(([key, value]) => (
-              <View key={key} className='content-section'>
-                <Text className='section-label'>{STEP_LABELS[key] || key}</Text>
-                <Text className='section-text'>{value}</Text>
+            {STEP_ORDER.map(key => {
+              const value = decryptedContent[key];
+              if (!value) return null;
+              return (
+                <View key={key} className='content-section'>
+                  <Text className='section-label'>{STEP_LABELS[key] || key}</Text>
+                  <Text className='section-text'>{value}</Text>
+                </View>
+              );
+            })}
+
+            {/* 底部分享按钮 */}
+            <View className='share-section'>
+              <View className='share-action-btn' onClick={handleShare}>
+                <Text className='share-action-text'>
+                  {generatingShare ? '生成中...' : '生成分享图片'}
+                </Text>
               </View>
-            ))}
+            </View>
           </View>
         ) : (
           <View className='locked-content'>
@@ -177,42 +354,24 @@ export default function DiaryDetailPage() {
         )}
       </ScrollView>
 
-      {/* 自定义PIN输入弹窗 */}
+      {/* 自定义PIN输入弹窗 - 使用PinKeyboard组件 */}
       {showPinModal && (
         <View className='pin-modal-overlay' onClick={() => setShowPinModal(false)}>
           <View className='pin-modal' onClick={e => e.stopPropagation()}>
             <Text className='pin-modal-title'>输入日记密码</Text>
             <Text className='pin-modal-hint'>请输入4位数字密码解锁道痕</Text>
-            
-            <View className='pin-dots'>
-              {[0, 1, 2, 3].map(i => (
-                <View key={i} className={`pin-dot ${i < pinInput.length ? 'filled' : ''}`} />
-              ))}
-            </View>
-            
-            <Input
-              className='pin-input-hidden'
-              type='number'
-              maxlength={4}
-              focus
-              value={pinInput}
-              onInput={e => handlePinInput(e.detail.value)}
-            />
-
             {pinError && <Text className='pin-error'>{pinError}</Text>}
-
-            <View className='pin-modal-actions'>
-              <View className='pin-cancel' onClick={() => setShowPinModal(false)}>
-                <Text className='pin-cancel-text'>取消</Text>
-              </View>
-              <View
-                className={`pin-confirm ${pinInput.length !== 4 || decrypting ? 'disabled' : ''}`}
-                onClick={handleUnlock}
-              >
-                <Text className='pin-confirm-text'>
-                  {decrypting ? '解密中...' : '确认'}
-                </Text>
-              </View>
+            <PinKeyboard
+              value={pinInput}
+              onChange={setPinInput}
+              onComplete={handlePinComplete}
+              shake={pinShake}
+            />
+            {decrypting && (
+              <Text className='pin-loading'>解密中...</Text>
+            )}
+            <View className='pin-cancel-btn' onClick={() => setShowPinModal(false)}>
+              <Text className='pin-cancel-text'>取消</Text>
             </View>
           </View>
         </View>
