@@ -195,8 +195,8 @@
   }
 
   .pin-change-modal {
-    width: 300px;
-    max-width: calc(100vw - 48px);
+    width: 320px;
+    max-width: calc(100vw - 32px);
     background: var(--color-bg);
     border-radius: var(--radius-lg);
     padding: 32px 24px;
@@ -241,11 +241,23 @@
       }
     }
 
-    .pin-input-hidden {
-      position: absolute;
-      opacity: 0;
-      width: 1px;
-      height: 1px;
+    .pin-change-loading {
+      display: block;
+      font-size: 13px;
+      color: var(--color-text-hint);
+      margin-top: 12px;
+    }
+
+    .pin-change-cancel {
+      margin-top: 16px;
+      padding: 10px 0;
+      cursor: pointer;
+
+      &-text {
+        font-size: 14px;
+        color: var(--color-text-secondary);
+        text-decoration: underline;
+      }
     }
 
     .pin-change-actions {

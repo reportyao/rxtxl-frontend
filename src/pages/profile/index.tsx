@@ -2,28 +2,19 @@
  * 个人中心页 - "我的"Tab
  *
  * 功能说明：
- * - 用户信息展示（头像首字母、昵称、脱敏手机号）
+ * - 用户信息展示（头像首字母、昵称）
  * - 核心数据统计（连续天数、道痕总数、石头种类）
- * - 功能入口菜单：
- *   - 河水日历（打卡记录）
- *   - 道痕回看（日记历史）
- *   - 石头收藏馆
- *   - 修改日记密码
- *   - 加密说明
- *   - 添加到桌面（PWA引导）
- *   - 关于我们
+ * - 功能入口菜单
+ * - 修改日记密码（使用自定义数字键盘）
  * - 退出登录
- *
- * 数据来源：
- * - GET /api/diaries/checkins - 打卡统计
- * - GET /api/diaries/stones - 石头统计
  */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Taro, { useDidShow } from '@tarojs/taro';
-import { View, Text, Input } from '@tarojs/components';
+import { View, Text } from '@tarojs/components';
 import { api } from '../../utils/request';
 import { useAppStore } from '../../store';
 import { deriveKey, hashPin } from '../../utils/crypto';
+import PinKeyboard from '../../components/PinKeyboard';
 import './index.scss';
 
 export default function ProfilePage() {
@@ -39,6 +30,7 @@ export default function ProfilePage() {
   const [confirmPin, setConfirmPin] = useState('');
   const [changePinStep, setChangePinStep] = useState<'old' | 'new' | 'confirm'>('old');
   const [changePinLoading, setChangePinLoading] = useState(false);
+  const [pinShake, setPinShake] = useState(false);
 
   /** 每次页面显示时刷新统计数据 */
   useDidShow(() => {
@@ -88,74 +80,96 @@ export default function ProfilePage() {
     setNewPin('');
     setConfirmPin('');
     setChangePinStep('old');
+    setPinShake(false);
     setShowChangePinModal(true);
   };
 
-  /**
-   * 修改日记密码流程：
-   * 1. 输入旧密码验证
-   * 2. 输入新密码
-   * 3. 确认新密码
-   * 4. 警告用户旧日记将无法解密
-   * 5. 调用API更新
-   *
-   * [BUG FIX] v1.1: 修改密码会导致旧日记无法解密（端到端加密架构的固有限制）。
-   * 必须在确认步骤后增加明确警告，让用户知情后再决定。
-   */
-  const handleChangePinNext = async () => {
+  const getCurrentPinValue = () => {
+    switch (changePinStep) {
+      case 'old': return oldPin;
+      case 'new': return newPin;
+      case 'confirm': return confirmPin;
+    }
+  };
+
+  const handlePinChange = (val: string) => {
+    switch (changePinStep) {
+      case 'old': setOldPin(val); break;
+      case 'new': setNewPin(val); break;
+      case 'confirm': setConfirmPin(val); break;
+    }
+  };
+
+  /** 每步 PIN 输入完成后的处理 */
+  const handlePinComplete = async (val: string) => {
     if (changePinStep === 'old') {
-      if (oldPin.length !== 4) return;
       // 验证旧密码
       try {
-        const oldPinHash = await hashPin(oldPin, user?.salt || '');
+        const oldPinHash = await hashPin(val, user?.salt || '');
         const res = await api.post('/api/auth/verify-pin', { pinHash: oldPinHash });
         if (res.code === 0) {
-          setChangePinStep('new');
+          setOldPin(val);
+          setTimeout(() => {
+            setChangePinStep('new');
+            setNewPin('');
+          }, 200);
         } else {
+          setPinShake(true);
           Taro.showToast({ title: '原密码错误', icon: 'none' });
-          setOldPin('');
+          setTimeout(() => {
+            setPinShake(false);
+            setOldPin('');
+          }, 600);
         }
       } catch (err) {
         Taro.showToast({ title: '验证失败', icon: 'none' });
+        setOldPin('');
       }
     } else if (changePinStep === 'new') {
-      if (newPin.length !== 4) return;
-      setChangePinStep('confirm');
-    } else if (changePinStep === 'confirm') {
-      if (confirmPin.length !== 4) return;
-      if (newPin !== confirmPin) {
-        Taro.showToast({ title: '两次密码不一致', icon: 'none' });
+      setNewPin(val);
+      setTimeout(() => {
+        setChangePinStep('confirm');
         setConfirmPin('');
-        return;
+      }, 200);
+    } else if (changePinStep === 'confirm') {
+      if (val === newPin) {
+        // 密码一致，弹出警告
+        Taro.showModal({
+          title: '重要提醒',
+          content: '修改密码后，之前用旧密码加密的日记将无法解密查看。\n\n这是端到端加密的安全机制，即使是我们也无法恢复。\n\n确定要修改密码吗？',
+          confirmText: '确定修改',
+          cancelText: '取消',
+          confirmColor: '#C0392B',
+          success: async (modalRes) => {
+            if (!modalRes.confirm) {
+              setConfirmPin('');
+              return;
+            }
+            await doChangePin(val);
+          },
+        });
+      } else {
+        setPinShake(true);
+        Taro.showToast({ title: '两次密码不一致', icon: 'none' });
+        setTimeout(() => {
+          setPinShake(false);
+          setConfirmPin('');
+        }, 600);
       }
-
-      // [BUG FIX] 修改密码前必须警告用户：旧日记将无法解密
-      Taro.showModal({
-        title: '重要提醒',
-        content: '修改密码后，之前用旧密码加密的日记将无法解密查看。\n\n这是端到端加密的安全机制，即使是我们也无法恢复。\n\n确定要修改密码吗？',
-        confirmText: '确定修改',
-        cancelText: '取消',
-        confirmColor: '#C0392B',
-        success: async (modalRes) => {
-          if (!modalRes.confirm) return;
-          await doChangePin();
-        },
-      });
     }
   };
 
   /** 执行密码修改 */
-  const doChangePin = async () => {
+  const doChangePin = async (confirmedNewPin: string) => {
     setChangePinLoading(true);
     try {
-      const newPinHash = await hashPin(newPin, user?.salt || '');
+      const newPinHash = await hashPin(confirmedNewPin, user?.salt || '');
       const res = await api.post('/api/auth/set-pin', {
         pinHash: newPinHash,
         salt: user?.salt || '',
       });
       if (res.code === 0) {
-        // 更新本地加密密钥
-        const newKey = await deriveKey(newPin, user?.salt || '');
+        const newKey = await deriveKey(confirmedNewPin, user?.salt || '');
         setCryptoKey(newKey);
         setShowChangePinModal(false);
         Taro.showToast({ title: '密码修改成功', icon: 'success' });
@@ -166,6 +180,15 @@ export default function ProfilePage() {
       Taro.showToast({ title: '修改失败', icon: 'none' });
     } finally {
       setChangePinLoading(false);
+    }
+  };
+
+  /** 获取修改密码弹窗的标题和描述 */
+  const getChangePinInfo = () => {
+    switch (changePinStep) {
+      case 'old': return { title: '请输入原密码', desc: '验证你的身份' };
+      case 'new': return { title: '请输入新密码', desc: '设置4位数字密码' };
+      case 'confirm': return { title: '请再次输入新密码', desc: '确认你的新密码' };
     }
   };
 
@@ -237,43 +260,24 @@ export default function ProfilePage() {
     },
   ];
 
-  /** 获取修改密码弹窗的标题和描述 */
-  const getChangePinInfo = () => {
-    switch (changePinStep) {
-      case 'old': return { title: '请输入原密码', desc: '验证你的身份' };
-      case 'new': return { title: '请输入新密码', desc: '设置4位数字密码' };
-      case 'confirm': return { title: '请再次输入新密码', desc: '确认你的新密码' };
-    }
-  };
-
-  const getCurrentPinValue = () => {
-    switch (changePinStep) {
-      case 'old': return oldPin;
-      case 'new': return newPin;
-      case 'confirm': return confirmPin;
-    }
-  };
-
-  const handlePinInput = (value: string) => {
-    const clean = value.replace(/\D/g, '').slice(0, 4);
-    switch (changePinStep) {
-      case 'old': setOldPin(clean); break;
-      case 'new': setNewPin(clean); break;
-      case 'confirm': setConfirmPin(clean); break;
-    }
-  };
-
   const changePinInfo = getChangePinInfo();
+
+  // 用户名显示：优先 nickname，其次 username，最后 '未知用户'
+  const displayName = user?.nickname || user?.username || '未知用户';
+  // 用户标识：有手机号则脱敏显示，否则显示 @username
+  const displayId = user?.phone
+    ? user.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
+    : user?.username ? `@${user.username}` : '';
 
   return (
     <View className='profile-page'>
       {/* 用户信息卡片 */}
       <View className='user-card'>
         <View className='avatar'>
-          <Text className='avatar-text'>{user?.nickname?.charAt(0) || '?'}</Text>
+          <Text className='avatar-text'>{displayName.charAt(0).toUpperCase()}</Text>
         </View>
-        <Text className='nickname'>{user?.nickname || '未知用户'}</Text>
-        <Text className='phone'>{user?.phone?.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')}</Text>
+        <Text className='nickname'>{displayName}</Text>
+        {displayId ? <Text className='phone'>{displayId}</Text> : null}
       </View>
 
       {/* 数据统计 */}
@@ -327,37 +331,23 @@ export default function ProfilePage() {
         <Text className='version-text'>人选天选论 v1.0.0</Text>
       </View>
 
-      {/* 修改密码弹窗 */}
+      {/* 修改密码弹窗 - 使用自定义数字键盘 */}
       {showChangePinModal && (
         <View className='pin-change-overlay' onClick={() => setShowChangePinModal(false)}>
           <View className='pin-change-modal' onClick={e => e.stopPropagation()}>
             <Text className='pin-change-title'>{changePinInfo.title}</Text>
             <Text className='pin-change-desc'>{changePinInfo.desc}</Text>
-            <View className='pin-dots'>
-              {[0, 1, 2, 3].map(i => (
-                <View key={i} className={`pin-dot ${i < getCurrentPinValue().length ? 'filled' : ''}`} />
-              ))}
-            </View>
-            <Input
-              className='pin-input-hidden'
-              type='number'
-              maxlength={4}
-              focus
+            <PinKeyboard
               value={getCurrentPinValue()}
-              onInput={e => handlePinInput(e.detail.value)}
+              onChange={handlePinChange}
+              onComplete={handlePinComplete}
+              shake={pinShake}
             />
-            <View className='pin-change-actions'>
-              <View className='pin-change-btn cancel' onClick={() => setShowChangePinModal(false)}>
-                <Text className='pin-change-btn-text'>取消</Text>
-              </View>
-              <View
-                className={`pin-change-btn confirm ${getCurrentPinValue().length !== 4 || changePinLoading ? 'disabled' : ''}`}
-                onClick={handleChangePinNext}
-              >
-                <Text className='pin-change-btn-text'>
-                  {changePinLoading ? '处理中...' : (changePinStep === 'confirm' ? '确认修改' : '下一步')}
-                </Text>
-              </View>
+            {changePinLoading && (
+              <Text className='pin-change-loading'>处理中...</Text>
+            )}
+            <View className='pin-change-cancel' onClick={() => setShowChangePinModal(false)}>
+              <Text className='pin-change-cancel-text'>取消</Text>
             </View>
           </View>
         </View>

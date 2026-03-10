@@ -21,10 +21,11 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import Taro from '@tarojs/taro';
-import { View, Text, Textarea, Input, ScrollView } from '@tarojs/components';
+import { View, Text, Textarea, ScrollView } from '@tarojs/components';
 import { api } from '../../utils/request';
 import { useAppStore } from '../../store';
 import { deriveKey, encrypt, hashString } from '../../utils/crypto';
+import PinKeyboard from '../../components/PinKeyboard';
 import './index.scss';
 
 /**
@@ -280,6 +281,20 @@ export default function DiaryPage() {
     }
   };
 
+  /** PIN输入完成（4位）自动确认 */
+  const handlePinComplete = async (val: string) => {
+    if (!user?.salt || !pinResolve) return;
+    try {
+      const key = await deriveKey(val, user.salt);
+      setCryptoKey(key);
+      setShowPinModal(false);
+      pinResolve(key);
+    } catch (err) {
+      Taro.showToast({ title: '密码错误，请重试', icon: 'none' });
+      setPinInput('');
+    }
+  };
+
   /** PIN输入取消 */
   const handlePinCancel = () => {
     setShowPinModal(false);
@@ -428,35 +443,19 @@ export default function DiaryPage() {
         </View>
       </ScrollView>
 
-      {/* PIN码输入弹窗 - 自定义实现，兼容所有平台 */}
+      {/* PIN码输入弹窗 - 自定义键盘，兼容所有平台 */}
       {showPinModal && (
         <View className='pin-modal-overlay' onClick={handlePinCancel}>
           <View className='pin-modal' onClick={e => e.stopPropagation()}>
             <Text className='pin-modal-title'>请输入日记密码</Text>
             <Text className='pin-modal-desc'>4位数字密码，用于加密你的道痕</Text>
-            <View className='pin-dots'>
-              {[0, 1, 2, 3].map(i => (
-                <View key={i} className={`pin-dot ${i < pinInput.length ? 'filled' : ''}`} />
-              ))}
-            </View>
-            <Input
-              className='pin-input-hidden'
-              type='number'
-              maxlength={4}
-              focus
+            <PinKeyboard
               value={pinInput}
-              onInput={e => setPinInput(e.detail.value.replace(/\D/g, '').slice(0, 4))}
+              onChange={setPinInput}
+              onComplete={handlePinComplete}
             />
-            <View className='pin-modal-actions'>
-              <View className='pin-modal-btn cancel' onClick={handlePinCancel}>
-                <Text className='pin-modal-btn-text'>取消</Text>
-              </View>
-              <View
-                className={`pin-modal-btn confirm ${pinInput.length !== 4 ? 'disabled' : ''}`}
-                onClick={handlePinConfirm}
-              >
-                <Text className='pin-modal-btn-text'>确认</Text>
-              </View>
+            <View className='pin-modal-cancel' onClick={handlePinCancel}>
+              <Text className='pin-modal-cancel-text'>取消</Text>
             </View>
           </View>
         </View>

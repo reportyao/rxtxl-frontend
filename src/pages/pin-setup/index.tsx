@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import Taro from '@tarojs/taro';
-import { View, Text, Input } from '@tarojs/components';
+import { View, Text } from '@tarojs/components';
 import { api } from '../../utils/request';
 import { useAppStore } from '../../store';
 import { generateSalt, deriveKey, hashPin } from '../../utils/crypto';
+import PinKeyboard from '../../components/PinKeyboard';
 import './index.scss';
 
 type Step = 'intro' | 'input' | 'confirm' | 'warning';
@@ -13,65 +14,41 @@ export default function PinSetupPage() {
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [loading, setLoading] = useState(false);
-  const [inputFocus, setInputFocus] = useState(false);
+  const [shake, setShake] = useState(false);
   const { setUser, setCryptoKey } = useAppStore();
-  
-  // 使用 ref 来强制控制输入框焦点
-  const inputRef = useRef<any>(null);
 
-  // 切换步骤时重置焦点
-  useEffect(() => {
-    if (step === 'input' || step === 'confirm') {
-      // 延迟设置焦点，确保 DOM 已渲染
-      setTimeout(() => {
-        setInputFocus(true);
-      }, 300);
+  const handlePinChange = (val: string) => {
+    setPin(val);
+  };
+
+  const handlePinComplete = (val: string) => {
+    setTimeout(() => setStep('confirm'), 200);
+  };
+
+  const handleConfirmChange = (val: string) => {
+    setConfirmPin(val);
+  };
+
+  const handleConfirmComplete = (val: string) => {
+    if (val === pin) {
+      setTimeout(() => setStep('warning'), 200);
     } else {
-      setInputFocus(false);
-    }
-  }, [step]);
-
-  // 处理PIN输入
-  const handlePinInput = (value: string) => {
-    const cleaned = value.replace(/\D/g, '').slice(0, 4);
-    setPin(cleaned);
-    if (cleaned.length === 4) {
-      // 输入完成后，先失焦，再切换步骤
-      setInputFocus(false);
+      setShake(true);
+      Taro.showToast({ title: '两次输入不一致，请重新输入', icon: 'none' });
       setTimeout(() => {
-        setStep('confirm');
-        setConfirmPin(''); // 确保确认位为空
-      }, 300);
-    }
-  };
-
-  // 处理确认PIN输入
-  const handleConfirmInput = (value: string) => {
-    const cleaned = value.replace(/\D/g, '').slice(0, 4);
-    setConfirmPin(cleaned);
-    if (cleaned.length === 4) {
-      if (cleaned === pin) {
-        setInputFocus(false);
-        setStep('warning');
-      } else {
-        Taro.showToast({ title: '两次输入不一致，请重新输入', icon: 'none' });
-        // 不一致时，清空确认位并保持在当前步骤，重新触发焦点
+        setShake(false);
         setConfirmPin('');
-        setInputFocus(false);
-        setTimeout(() => setInputFocus(true), 100);
-      }
+      }, 600);
     }
   };
 
-  // 重新设置逻辑
   const handleReset = () => {
     setPin('');
     setConfirmPin('');
-    setInputFocus(false);
+    setShake(false);
     setStep('input');
   };
 
-  // 确认设置PIN
   const handleConfirmSetup = async () => {
     if (loading) return;
     setLoading(true);
@@ -100,7 +77,7 @@ export default function PinSetupPage() {
   };
 
   return (
-    <View className='pin-setup-page' onClick={() => (step === 'input' || step === 'confirm') && setInputFocus(true)}>
+    <View className='pin-setup-page'>
       {/* 步骤1：加密介绍 */}
       {step === 'intro' && (
         <View className='step-content animate-fadeIn'>
@@ -112,7 +89,7 @@ export default function PinSetupPage() {
             </Text>
             <Text className='desc-highlight'>你的河底，只属于你自己。</Text>
           </View>
-          <View className='next-btn' onClick={(e) => { e.stopPropagation(); setStep('input'); }}>
+          <View className='next-btn' onClick={() => setStep('input')}>
             <Text className='next-btn-text'>设置日记密码</Text>
           </View>
         </View>
@@ -123,19 +100,10 @@ export default function PinSetupPage() {
         <View className='step-content animate-fadeIn'>
           <Text className='step-title'>设置4位数字密码</Text>
           <Text className='step-hint'>这把钥匙将守护你的河底</Text>
-          <View className='pin-dots'>
-            {[0, 1, 2, 3].map(i => (
-              <View key={i} className={`pin-dot ${i < pin.length ? 'filled' : ''}`} />
-            ))}
-          </View>
-          <Input
-            className='pin-input-hidden'
-            type='number'
-            maxlength={4}
-            focus={inputFocus}
+          <PinKeyboard
             value={pin}
-            onInput={e => handlePinInput(e.detail.value)}
-            onBlur={() => setInputFocus(false)}
+            onChange={handlePinChange}
+            onComplete={handlePinComplete}
           />
         </View>
       )}
@@ -145,21 +113,13 @@ export default function PinSetupPage() {
         <View className='step-content animate-fadeIn'>
           <Text className='step-title'>再次输入确认</Text>
           <Text className='step-hint'>请确保你记住了这4位数字</Text>
-          <View className='pin-dots'>
-            {[0, 1, 2, 3].map(i => (
-              <View key={i} className={`pin-dot ${i < confirmPin.length ? 'filled' : ''}`} />
-            ))}
-          </View>
-          <Input
-            className='pin-input-hidden'
-            type='number'
-            maxlength={4}
-            focus={inputFocus}
+          <PinKeyboard
             value={confirmPin}
-            onInput={e => handleConfirmInput(e.detail.value)}
-            onBlur={() => setInputFocus(false)}
+            onChange={handleConfirmChange}
+            onComplete={handleConfirmComplete}
+            shake={shake}
           />
-          <View className='back-link' onClick={(e) => { e.stopPropagation(); handleReset(); }}>
+          <View className='back-link' onClick={handleReset}>
             <Text className='back-link-text'>重新设置</Text>
           </View>
         </View>
@@ -177,7 +137,7 @@ export default function PinSetupPage() {
           </View>
           <View
             className={`confirm-btn ${loading ? 'disabled' : ''}`}
-            onClick={(e) => { e.stopPropagation(); handleConfirmSetup(); }}
+            onClick={handleConfirmSetup}
           >
             <Text className='confirm-btn-text'>
               {loading ? '设置中...' : '我已牢记，开始捞石头'}

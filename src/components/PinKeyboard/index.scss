@@ -1,0 +1,89 @@
+.pin-keyboard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  // PIN 圆点
+  &-dots {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 32px;
+
+    &.shake {
+      animation: pinShake 0.5s ease;
+    }
+  }
+
+  &-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    transition: all 0.15s ease;
+
+    &.filled {
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
+      transform: scale(1.15);
+    }
+  }
+
+  // 数字键盘
+  &-numpad {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+}
+
+.numpad-key {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-card);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    background-color: var(--color-border);
+    transform: scale(0.94);
+  }
+
+  &-text {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  &-empty {
+    background-color: transparent;
+    pointer-events: none;
+  }
+
+  &-del {
+    background-color: transparent;
+
+    &:active {
+      background-color: var(--color-border);
+    }
+  }
+}
+
+.numpad-del-text {
+  font-size: 20px;
+  color: var(--color-text-secondary);
+}
+
+@keyframes pinShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
