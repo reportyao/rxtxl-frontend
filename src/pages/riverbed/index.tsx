@@ -30,7 +30,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Taro from '@tarojs/taro';
+import Taro, { useDidShow } from '@tarojs/taro';
 import { View, Text } from '@tarojs/components';
 import { api } from '../../utils/request';
 import './index.scss';
@@ -87,6 +87,11 @@ export default function RiverbedPage() {
   useEffect(() => {
     fetchStones();
   }, []);
+
+  /** 每次 Tab 切换到河床时刷新数据 */
+  useDidShow(() => {
+    fetchStones();
+  });
 
   /** 从API获取聚合后的石头数据 */
   const fetchStones = async () => {

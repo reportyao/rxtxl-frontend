@@ -235,24 +235,52 @@ export default function ProfilePage() {
     {
       icon: '📲',
       label: '添加到桌面',
-      hint: '随时捞石头',
+      hint: '随时捩石头',
       onClick: () => {
         Taro.showModal({
           title: '添加到桌面',
-          content: '在浏览器菜单中选择"添加到主屏幕"，即可像App一样从桌面直接打开。\n\niPhone: 点击底部分享按钮 → 添加到主屏幕\nAndroid: 点击右上角菜单 → 添加到主屏幕',
+          content: '在浏览器菜单中选择"添加到主屏幕"，即可像App一样从桌面直接打开。\n\niPhone: 点击底部分享按鈕 → 添加到主屏幕\nAndroid: 点击右上角菜单 → 添加到主屏幕',
           showCancel: false,
           confirmText: '知道了',
         });
       },
     },
+    { type: 'divider' as const },
     {
-      icon: '💡',
-      label: '关于人选天选论',
+      icon: '💞',
+      label: '分享本应用',
       hint: '',
       onClick: () => {
         Taro.showModal({
-          title: '关于人选天选论',
-          content: '「人选天选论」是一套关于认识自己的方法论。\n\n通过每天"捞石头"——记录和觉察自己的贪婪与恐惧，逐步看清自己河底的石头，建立稳定的人生结构。\n\n作者：姜蓝\n\n愿你在河流中找到自己。',
+          title: '分享人选天选论',
+          content: '🪨 我在用「人选天选论」记录自己每天的贪婪与恐惧，慢慢看清自己的河底。\n\n如果你也想认识自己，可以扫码下载：\n\nrxtxl.com\n（人选天选论拼音首字母）',
+          showCancel: false,
+          confirmText: '复制链接',
+          success: (res) => {
+            if (res.confirm) {
+              // 尝试复制到剪贴板
+              if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText('https://rxtxl.com').then(() => {
+                  Taro.showToast({ title: '链接已复制', icon: 'success' });
+                }).catch(() => {
+                  Taro.showToast({ title: 'rxtxl.com', icon: 'none', duration: 3000 });
+                });
+              } else {
+                Taro.showToast({ title: 'rxtxl.com', icon: 'none', duration: 3000 });
+              }
+            }
+          },
+        });
+      },
+    },
+    {
+      icon: '💡',
+      label: '关于本应用',
+      hint: '',
+      onClick: () => {
+        Taro.showModal({
+          title: '关于本应用',
+          content: '本应用为路飞粉丝自发开发的产品，旨在提供工具简化粉丝实践人选天选论的过程，更好的专注实践本身。与路飞（姜蓝）本人无关，属于社区自我驱动。',
           showCancel: false,
           confirmText: '知道了',
         });
