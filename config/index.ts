@@ -65,6 +65,11 @@ export default defineConfig({
 
   /** 编译时常量定义（可在代码中通过变量名直接使用） */
   defineConstants: {
+    /**
+     * API基础地址
+     * - 生产环境不设置此变量（使用相对路径，避免跨域）
+     * - 如需指定完整URL，设置环境变量 TARO_APP_API_URL
+     */
     'process.env.TARO_APP_API_URL': JSON.stringify(process.env.TARO_APP_API_URL || ''),
   },
 

@@ -196,7 +196,7 @@ export default function ArticleDetailPage() {
         <View className='nav-back' onClick={handleBack}>
           <Text className='back-icon'>←</Text>
         </View>
-        <Text className='nav-title'>第{article.chapter}章</Text>
+        <Text className='nav-title'>{article.chapter === 0 ? '序' : `第${article.chapter}章`}</Text>
         <View className='nav-share' onClick={() => setShowShareTip(!showShareTip)}>
           <Text className='share-icon'>⊕</Text>
         </View>
@@ -211,7 +211,7 @@ export default function ArticleDetailPage() {
       >
         {/* 文章头部信息 */}
         <View className='article-header'>
-          <Text className='article-chapter'>第{article.chapter}章</Text>
+          <Text className='article-chapter'>{article.chapter === 0 ? '序' : `第${article.chapter}章`}</Text>
           <Text className='article-title'>{article.title}</Text>
           <View className='article-meta'>
             <Text className='meta-date'>{formatDate(article.publishedAt)}</Text>

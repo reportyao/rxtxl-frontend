@@ -12,8 +12,15 @@
 
 import Taro from '@tarojs/taro';
 
-/** API基础地址，从环境变量读取，开发环境默认localhost:3000 */
-const BASE_URL = process.env.TARO_APP_API_URL || 'http://localhost:3000';
+/**
+ * API基础地址，从环境变量读取
+ * - 生产环境：设置为空字符串，使用相对路径，避免跨域问题（前端和API同域）
+ * - 开发环境：使用localhost:3000
+ * - 如需指定完整URL：设置 TARO_APP_API_URL 环境变量
+ */
+const BASE_URL = process.env.TARO_APP_API_URL !== undefined && process.env.TARO_APP_API_URL !== ''
+  ? process.env.TARO_APP_API_URL
+  : (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000');
 
 /** 请求超时时间（毫秒） */
 const REQUEST_TIMEOUT = 15000;
