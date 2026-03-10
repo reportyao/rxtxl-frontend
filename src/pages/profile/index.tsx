@@ -8,7 +8,7 @@
  * - 修改日记密码（使用自定义数字键盘）
  * - 退出登录
  */
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Taro, { useDidShow } from '@tarojs/taro';
 import { View, Text } from '@tarojs/components';
 import { api } from '../../utils/request';
@@ -20,6 +20,8 @@ import './index.scss';
 export default function ProfilePage() {
   const { user, logout, setCryptoKey } = useAppStore();
   const [streakDays, setStreakDays] = useState(0);
+  /** PWA安装提示事件 */
+  const deferredPromptRef = useRef<any>(null);
   const [totalDiaries, setTotalDiaries] = useState(0);
   const [totalStones, setTotalStones] = useState(0);
 
@@ -31,6 +33,22 @@ export default function ProfilePage() {
   const [changePinStep, setChangePinStep] = useState<'old' | 'new' | 'confirm'>('old');
   const [changePinLoading, setChangePinLoading] = useState(false);
   const [pinShake, setPinShake] = useState(false);
+
+  /** 监听PWA安装提示事件 */
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      deferredPromptRef.current = e;
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeinstallprompt', handler);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('beforeinstallprompt', handler);
+      }
+    };
+  }, []);
 
   /** 每次页面显示时刷新统计数据 */
   useDidShow(() => {
@@ -235,14 +253,36 @@ export default function ProfilePage() {
     {
       icon: '📲',
       label: '添加到桌面',
-      hint: '随时捩石头',
+      hint: '随时捞石头',
       onClick: () => {
-        Taro.showModal({
-          title: '添加到桌面',
-          content: '在浏览器菜单中选择"添加到主屏幕"，即可像App一样从桌面直接打开。\n\niPhone: 点击底部分享按鈕 → 添加到主屏幕\nAndroid: 点击右上角菜单 → 添加到主屏幕',
-          showCancel: false,
-          confirmText: '知道了',
-        });
+        // 优先使用浏览器原生PWA安装API
+        if (deferredPromptRef.current) {
+          deferredPromptRef.current.prompt();
+          deferredPromptRef.current.userChoice.then((choiceResult: any) => {
+            if (choiceResult.outcome === 'accepted') {
+              Taro.showToast({ title: '添加成功', icon: 'success' });
+            }
+            deferredPromptRef.current = null;
+          });
+        } else {
+          // 不支持PWA安装API时，显示手动操作指引
+          const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+          const isWechat = typeof navigator !== 'undefined' && /MicroMessenger/i.test(navigator.userAgent);
+          let content = '';
+          if (isWechat) {
+            content = '微信内无法直接添加到桌面。\n\n请点击右上角「···」→ 选择「在浏览器中打开」，然后在浏览器中添加到主屏幕。';
+          } else if (isIOS) {
+            content = '请点击 Safari 底部的分享按钮（方框+箭头图标），然后选择「添加到主屏幕」即可。';
+          } else {
+            content = '请点击浏览器右上角菜单（三个点），然后选择「添加到主屏幕」或「安装应用」即可。';
+          }
+          Taro.showModal({
+            title: '添加到桌面',
+            content,
+            showCancel: false,
+            confirmText: '知道了',
+          });
+        }
       },
     },
     { type: 'divider' as const },

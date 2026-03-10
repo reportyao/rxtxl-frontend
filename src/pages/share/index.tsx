@@ -1,17 +1,24 @@
 /**
- * 分享卡片页 v2.0
+ * 分享卡片页 v3.0
  *
- * 改进内容：
- * - 全新石头视觉设计：多层渐变+纹理+高光，更有质感
- * - 底部添加 rxtxl.com 二维码和网址
- * - 二维码下方添加说明文字：人选天选轮拼音首字母
- * - 整体配色升级，符合应用暖米色风格
+ * v3.0 改进内容：
+ * - 使用AI生成的水墨风格石头图片替代Canvas绘制的丑石头
+ * - 修复连续天数bug：从URL参数正确读取streak
+ * - 石头图片通过import引入，打包时自动处理路径
+ * - 石头名称叠加在图片上方，水墨书法风格
  */
 import { useState, useEffect } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { View, Text } from '@tarojs/components';
 import QRCode from 'qrcode';
 import './index.scss';
+
+// 水墨石头图片（AI生成）
+import stoneImg1 from '../../assets/stone-ink-1.png';
+import stoneImg2 from '../../assets/stone-ink-2.png';
+import stoneImg3 from '../../assets/stone-ink-3.png';
+
+const STONE_IMAGES = [stoneImg1, stoneImg2, stoneImg3];
 
 export default function SharePage() {
   const router = useRouter();
@@ -30,81 +37,28 @@ export default function SharePage() {
   }, []);
 
   /**
-   * 绘制精美石头
-   * 使用多层渐变模拟真实石头质感：底色 + 纹理层 + 高光
+   * 根据石头名称选择一张石头图片（确定性选择）
    */
-  const drawBeautifulStone = (
-    ctx: CanvasRenderingContext2D,
-    cx: number,
-    cy: number,
-    rx: number,
-    ry: number,
-    stoneText: string
-  ) => {
-    ctx.save();
-    ctx.translate(cx, cy);
-
-    // 石头阴影
-    ctx.shadowColor = 'rgba(0,0,0,0.35)';
-    ctx.shadowBlur = 18;
-    ctx.shadowOffsetX = 4;
-    ctx.shadowOffsetY = 6;
-
-    // 石头主体渐变（暖棕色系，模拟河底鹅卵石）
-    const stoneGrad = ctx.createRadialGradient(-rx * 0.2, -ry * 0.3, rx * 0.1, 0, 0, rx * 1.1);
-    stoneGrad.addColorStop(0, '#C4956A');   // 高光区：浅暖棕
-    stoneGrad.addColorStop(0.35, '#A0724A'); // 中间过渡
-    stoneGrad.addColorStop(0.7, '#7A5230');  // 暗部：深棕
-    stoneGrad.addColorStop(1, '#5C3A1E');    // 边缘：最深
-
-    ctx.beginPath();
-    // 用贝塞尔曲线绘制不规则石头轮廓（比椭圆更自然）
-    ctx.moveTo(0, -ry);
-    ctx.bezierCurveTo(rx * 0.9, -ry * 0.9, rx * 1.05, -ry * 0.1, rx * 0.95, ry * 0.6);
-    ctx.bezierCurveTo(rx * 0.7, ry * 1.05, -rx * 0.6, ry * 1.05, -rx * 0.95, ry * 0.6);
-    ctx.bezierCurveTo(-rx * 1.05, -ry * 0.1, -rx * 0.9, -ry * 0.9, 0, -ry);
-    ctx.closePath();
-    ctx.fillStyle = stoneGrad;
-    ctx.fill();
-
-    // 去除阴影，绘制纹理层
-    ctx.shadowColor = 'transparent';
-
-    // 纹理：几条细微的弧线模拟石头纹路
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-    ctx.lineWidth = 1.5;
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath();
-      const offsetY = -ry * 0.3 + i * ry * 0.3;
-      ctx.moveTo(-rx * 0.6, offsetY - ry * 0.1);
-      ctx.quadraticCurveTo(0, offsetY + ry * 0.15, rx * 0.6, offsetY - ry * 0.05);
-      ctx.stroke();
+  const getStoneImageIndex = (stoneName: string): number => {
+    let hash = 0;
+    for (let i = 0; i < stoneName.length; i++) {
+      hash = ((hash << 5) - hash) + stoneName.charCodeAt(i);
+      hash |= 0;
     }
+    return Math.abs(hash) % STONE_IMAGES.length;
+  };
 
-    // 高光：左上角椭圆形高光，模拟光泽
-    const hlGrad = ctx.createRadialGradient(-rx * 0.3, -ry * 0.35, 0, -rx * 0.3, -ry * 0.35, rx * 0.5);
-    hlGrad.addColorStop(0, 'rgba(255,255,255,0.45)');
-    hlGrad.addColorStop(0.5, 'rgba(255,255,255,0.12)');
-    hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.beginPath();
-    ctx.ellipse(-rx * 0.3, -ry * 0.35, rx * 0.45, ry * 0.3, -0.4, 0, Math.PI * 2);
-    ctx.fillStyle = hlGrad;
-    ctx.fill();
-
-    // 石头上的文字
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 1;
-    ctx.shadowOffsetY = 1;
-    ctx.fillStyle = '#FFF8F0';
-    const fontSize = Math.min(rx * 0.38, 16);
-    ctx.font = `bold ${fontSize}px "Noto Serif SC", serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const displayText = stoneText.length > 7 ? stoneText.slice(0, 6) + '…' : stoneText;
-    ctx.fillText(displayText, 0, 0);
-
-    ctx.restore();
+  /**
+   * 加载图片为Image对象
+   */
+  const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
   };
 
   /**
@@ -128,7 +82,7 @@ export default function SharePage() {
     if (!ctx) return;
     ctx.scale(dpr, dpr);
 
-    // ===== 背景：暖米色渐变，与应用整体风格一致 =====
+    // ===== 背景：暖米色渐变 =====
     const bgGrad = ctx.createLinearGradient(0, 0, 0, cardHeight);
     bgGrad.addColorStop(0, '#F5F0E8');
     bgGrad.addColorStop(0.5, '#EDE8DE');
@@ -163,7 +117,6 @@ export default function SharePage() {
 
   /** 绘制金句分享卡片 */
   const drawQuoteCard = async (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    // 章节标识
     if (chapter) {
       ctx.fillStyle = '#9B8B7A';
       ctx.font = '12px sans-serif';
@@ -171,13 +124,11 @@ export default function SharePage() {
       ctx.fillText(`第 ${chapter} 章`, 32, 52);
     }
 
-    // 引号装饰
     ctx.fillStyle = 'rgba(139,111,78,0.15)';
     ctx.font = 'bold 80px serif';
     ctx.textAlign = 'left';
-    ctx.fillText('"', 22, 110);
+    ctx.fillText('\u201C', 22, 110);
 
-    // 金句文字
     ctx.fillStyle = '#3D2B1A';
     ctx.font = '19px "Noto Serif SC", serif';
     ctx.textAlign = 'left';
@@ -189,7 +140,6 @@ export default function SharePage() {
       y += 30;
     });
 
-    // 底部分割线
     ctx.strokeStyle = 'rgba(139,111,78,0.25)';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -200,7 +150,7 @@ export default function SharePage() {
     await drawBottomSection(ctx, w, h);
   };
 
-  /** 绘制今日一捞分享卡片 */
+  /** 绘制今日一捞分享卡片 - 使用AI水墨石头图片 */
   const drawDailyCard = async (ctx: CanvasRenderingContext2D, w: number, h: number) => {
     // 日期
     ctx.fillStyle = '#9B8B7A';
@@ -214,15 +164,47 @@ export default function SharePage() {
     ctx.textAlign = 'center';
     ctx.fillText('今日捞到一块石头', w / 2, 82);
 
-    // 精美石头（居中，偏上）
+    // ===== 绘制水墨石头图片 =====
     const stoneText = text || '未知的石头';
-    drawBeautifulStone(ctx, w / 2, 195, 72, 50, stoneText);
+    const imgIndex = getStoneImageIndex(stoneText);
+    const imgSrc = STONE_IMAGES[imgIndex];
+
+    try {
+      const stoneImage = await loadImage(imgSrc);
+      // 石头图片尺寸和位置
+      const stoneSize = 140;
+      const stoneX = w / 2 - stoneSize / 2;
+      const stoneY = 105;
+
+      // 绘制石头图片阴影
+      ctx.shadowColor = 'rgba(0,0,0,0.15)';
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 4;
+      ctx.drawImage(stoneImage, stoneX, stoneY, stoneSize, stoneSize);
+      ctx.shadowColor = 'transparent';
+    } catch (e) {
+      // 图片加载失败时用简单椭圆代替
+      ctx.fillStyle = '#8B7A6B';
+      ctx.beginPath();
+      ctx.ellipse(w / 2, 175, 60, 42, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 石头名称（在图片下方）
+    ctx.fillStyle = '#3D2B1A';
+    ctx.font = 'bold 18px "Noto Serif SC", serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const displayName = stoneText.length > 8 ? stoneText.slice(0, 7) + '…' : stoneText;
+    ctx.fillText(`「${displayName}」`, w / 2, 268);
 
     // 连续天数
     ctx.fillStyle = '#7A6B5A';
     ctx.font = '13px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`已连续捞石头 ${streak} 天`, w / 2, 290);
+    const streakNum = parseInt(streak, 10) || 0;
+    ctx.fillText(`已连续捞石头 ${streakNum} 天`, w / 2, 300);
 
     // 底部分割线
     ctx.strokeStyle = 'rgba(139,111,78,0.25)';
@@ -239,7 +221,6 @@ export default function SharePage() {
    * 绘制底部公共区域：品牌名 + 二维码 + 网址 + 说明
    */
   const drawBottomSection = async (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    // 品牌名
     ctx.fillStyle = '#5C4A3A';
     ctx.font = '13px "Noto Serif SC", serif';
     ctx.textAlign = 'center';
@@ -249,7 +230,6 @@ export default function SharePage() {
     ctx.font = '11px sans-serif';
     ctx.fillText('认识自己的河流', w / 2, h - 105);
 
-    // 生成二维码（32×32 px）
     try {
       const qrCanvas = document.createElement('canvas');
       await QRCode.toCanvas(qrCanvas, 'https://rxtxl.com', {
@@ -260,7 +240,6 @@ export default function SharePage() {
           light: '#F5F0E8',
         },
       });
-      // 将二维码绘制到卡片上（居中，底部区域）
       const qrSize = 52;
       const qrX = w / 2 - qrSize / 2;
       const qrY = h - 90;
@@ -269,13 +248,11 @@ export default function SharePage() {
       console.error('二维码生成失败:', e);
     }
 
-    // 网址文字
     ctx.fillStyle = '#7A6B5A';
     ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('rxtxl.com', w / 2, h - 28);
 
-    // 说明小字
     ctx.fillStyle = '#B0A090';
     ctx.font = '9px sans-serif';
     ctx.fillText('人选天选轮拼音首字母', w / 2, h - 13);
@@ -334,7 +311,7 @@ export default function SharePage() {
     <View className='share-page'>
       <View className='page-header'>
         <View className='nav-back' onClick={() => Taro.navigateBack()}>
-          <Text className='back-icon'>←</Text>
+          <Text className='back-icon'>\u2190</Text>
         </View>
         <Text className='page-title'>分享卡片</Text>
         <View className='placeholder' />

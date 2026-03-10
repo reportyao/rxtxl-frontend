@@ -73,6 +73,9 @@ export default defineConfig({
     patterns: [
       { from: 'src/sw.js', to: 'dist/sw.js' },
       { from: 'src/favicon.ico', to: 'dist/favicon.ico' },
+      { from: 'src/assets/manifest.json', to: 'dist/manifest.json' },
+      { from: 'src/assets/icons/icon-192.png', to: 'dist/icon-192.png' },
+      { from: 'src/assets/icons/icon-512.png', to: 'dist/icon-512.png' },
     ],
     options: {},
   },

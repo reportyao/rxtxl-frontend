@@ -101,7 +101,7 @@ export default function DiaryPage() {
   const [pinInput, setPinInput] = useState('');
   const [pinResolve, setPinResolve] = useState<((key: CryptoKey | null) => void) | null>(null);
 
-  const { user, cryptoKey, setCryptoKey } = useAppStore();
+  const { user, cryptoKey, setCryptoKey, setUser } = useAppStore();
 
   /**
    * 页面加载时：
@@ -243,6 +243,13 @@ export default function DiaryPage() {
         setTodayDone(true);
         setTodayStone(mainStone);
         clearDraft(); // 保存成功后清除草稿
+        // 保存成功后刷新用户的连续天数（从服务器获取最新值）
+        try {
+          const checkinRes = await api.get('/api/diaries/checkins');
+          if (checkinRes.code === 0 && checkinRes.data) {
+            setUser({ streakDays: checkinRes.data.currentStreak || 0 });
+          }
+        } catch (_) { /* 忽略streak刷新失败 */ }
       } else {
         Taro.showToast({ title: res.message, icon: 'none' });
       }
@@ -309,8 +316,9 @@ export default function DiaryPage() {
   /** 跳转到"今日一捞"分享页 */
   const handleShareToday = () => {
     const stone = todayStone || answers.stone || '';
+    const streak = user?.streakDays || 0;
     Taro.navigateTo({
-      url: `/pages/share/index?type=daily&stone=${encodeURIComponent(stone)}`,
+      url: `/pages/share/index?type=daily&stone=${encodeURIComponent(stone)}&streak=${streak}`,
     });
   };
 
