@@ -2,9 +2,10 @@
  * Service Worker - 人选天选论 PWA
  * 提供基础的离线缓存能力
  * v4: 深度修复和浏览器适配优化
+ * v5: 修复px转rem导致字体偏小的问题
  */
 
-const CACHE_NAME = 'rxtxl-v4';
+const CACHE_NAME = 'rxtxl-v5';
 const STATIC_ASSETS = [
   '/',
 ];

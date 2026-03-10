@@ -151,6 +151,15 @@ export default defineConfig({
         enable: true,
         config: {},
       },
+      /**
+       * px转rem自动转换（H5端）
+       * 禁用此功能，因为本项目直接使用px单位
+       * 启用时Taro会将px转为rem，但需要配合动态设置html font-size
+       * 禁用后CSS中的px值保持原样，确保字体大小等精确控制
+       */
+      pxtransform: {
+        enable: false,
+      },
       cssModules: {
         enable: false,
         config: {
