@@ -121,7 +121,7 @@ export default function SharePage() {
       ctx.fillStyle = '#9B8B7A';
       ctx.font = '12px sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText(`第 ${chapter} 章`, 32, 52);
+      ctx.fillText(`第 ${chapter} 篇`, 32, 52);
     }
 
     ctx.fillStyle = 'rgba(139,111,78,0.15)';

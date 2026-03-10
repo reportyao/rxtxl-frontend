@@ -120,7 +120,7 @@ export default function ArticlesPage() {
             onClick={() => goToDetail(article.id)}
           >
             <View className='card-chapter'>
-              <Text className='chapter-text'>{article.chapter === 0 ? '序' : `第${article.chapter}章`}</Text>
+              <Text className='chapter-text'>{article.chapter === 0 ? '序' : `第${article.chapter}篇`}</Text>
               {/* 新文章标识：3天内发布的文章显示"新"标签 */}
               {isNewArticle(article.publishedAt) && (
                 <View className='new-badge'>

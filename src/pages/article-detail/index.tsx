@@ -94,7 +94,7 @@ export default function ArticleDetailPage() {
     const target = direction === 'prev' ? article.prevArticle : article.nextArticle;
 
     if (!target) {
-      const msg = direction === 'prev' ? '已是第一章' : '已是最新章节';
+      const msg = direction === 'prev' ? '已是第一篇' : '已是最新篇';
       Taro.showToast({ title: msg, icon: 'none', duration: 1500 });
       return;
     }
@@ -196,7 +196,7 @@ export default function ArticleDetailPage() {
         <View className='nav-back' onClick={handleBack}>
           <Text className='back-icon'>←</Text>
         </View>
-        <Text className='nav-title'>{article.chapter === 0 ? '序' : `第${article.chapter}章`}</Text>
+        <Text className='nav-title'>{article.chapter === 0 ? '序' : `第${article.chapter}篇`}</Text>
         <View className='nav-share' onClick={() => setShowShareTip(!showShareTip)}>
           <Text className='share-icon'>⊕</Text>
         </View>
@@ -211,7 +211,7 @@ export default function ArticleDetailPage() {
       >
         {/* 文章头部信息 */}
         <View className='article-header'>
-          <Text className='article-chapter'>{article.chapter === 0 ? '序' : `第${article.chapter}章`}</Text>
+          <Text className='article-chapter'>{article.chapter === 0 ? '序' : `第${article.chapter}篇`}</Text>
           <Text className='article-title'>{article.title}</Text>
           <View className='article-meta'>
             <Text className='meta-date'>{formatDate(article.publishedAt)}</Text>
@@ -235,7 +235,7 @@ export default function ArticleDetailPage() {
         {/* 金句区域 - 特殊样式展示 */}
         {article.quotes && article.quotes.length > 0 && (
           <View className='quotes-section'>
-            <Text className='quotes-title'>本章金句</Text>
+            <Text className='quotes-title'>本篇金句</Text>
             {article.quotes.map((quote, idx) => (
               <View key={idx} className='quote-card' onClick={() => handleShareQuote(quote)}>
                 <Text className='quote-text'>「{quote}」</Text>
@@ -251,32 +251,32 @@ export default function ArticleDetailPage() {
         <View className='chapter-nav'>
           {article.prevArticle ? (
             <View className='chapter-nav-btn' onClick={() => switchChapter('prev')}>
-              <Text className='chapter-nav-btn-text'>← 上一章：{article.prevArticle.title}</Text>
+              <Text className='chapter-nav-btn-text'>← 上一篇：{article.prevArticle.title}</Text>
             </View>
           ) : (
             <View className='chapter-nav-btn disabled'>
-              <Text className='chapter-nav-btn-text'>已是第一章</Text>
+              <Text className='chapter-nav-btn-text'>已是第一篇</Text>
             </View>
           )}
           {article.nextArticle ? (
             <View className='chapter-nav-btn' onClick={() => switchChapter('next')}>
-              <Text className='chapter-nav-btn-text'>下一章：{article.nextArticle.title} →</Text>
+              <Text className='chapter-nav-btn-text'>下一篇：{article.nextArticle.title} →</Text>
             </View>
           ) : (
             <View className='chapter-nav-btn disabled'>
-              <Text className='chapter-nav-btn-text'>已是最新章节</Text>
+              <Text className='chapter-nav-btn-text'>已是最新篇</Text>
             </View>
           )}
         </View>
 
         {/* 章节切换提示 */}
         <View className='chapter-nav-hint'>
-          <Text className='hint-text'>← 右滑上一章 | 左滑下一章 →</Text>
+          <Text className='hint-text'>← 右滑上一篇 | 左滑下一篇 →</Text>
         </View>
 
         {/* 底部 */}
         <View className='article-footer'>
-          <Text className='footer-text'>—— 本章完 ——</Text>
+          <Text className='footer-text'>—— 本篇完 ——</Text>
         </View>
       </ScrollView>
 
@@ -284,7 +284,7 @@ export default function ArticleDetailPage() {
       {showShareTip && (
         <View className='share-tip-overlay' onClick={() => setShowShareTip(false)}>
           <View className='share-tip-card' onClick={e => e.stopPropagation()}>
-            <Text className='share-tip-title'>分享本章</Text>
+            <Text className='share-tip-title'>分享本篇</Text>
             <Text className='share-tip-desc'>选择一句金句生成分享卡片</Text>
             {article.quotes && article.quotes.length > 0 ? (
               article.quotes.map((quote, idx) => (
@@ -293,7 +293,7 @@ export default function ArticleDetailPage() {
                 </View>
               ))
             ) : (
-              <Text className='share-tip-empty'>本章暂无金句</Text>
+              <Text className='share-tip-empty'>本篇暂无金句</Text>
             )}
             <View className='share-tip-close' onClick={() => setShowShareTip(false)}>
               <Text className='share-tip-close-text'>关闭</Text>
