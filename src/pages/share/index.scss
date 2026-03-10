@@ -1,10 +1,13 @@
-// 分享页样式 v2.0 - 暖米色风格，与应用整体 UI 一致
+// 分享页样式 v4.0 - 增加生成中动画 + 预览界面
 
 .share-page {
   min-height: 100vh;
   min-height: var(--vh-full, 100vh);
   background: linear-gradient(160deg, #F0EBE0 0%, #E8E0D4 100%);
+  display: flex;
+  flex-direction: column;
 
+  // ===== 顶部导航 =====
   .page-header {
     padding: calc(40px + var(--safe-top, 0px)) var(--spacing-lg) 16px;
     display: flex;
@@ -31,10 +34,65 @@
     .placeholder { width: 44px; }
   }
 
-  .card-preview {
+  // ===== 生成中状态 =====
+  .generating-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 60px;
+
+    .ink-spinner {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 28px;
+
+      .ink-drop {
+        width: 10px;
+        height: 10px;
+        background: #8B6F4E;
+        border-radius: 50%;
+        animation: inkBounce 1.2s ease-in-out infinite;
+
+        &:nth-child(2) { animation-delay: 0.2s; }
+        &:nth-child(3) { animation-delay: 0.4s; }
+      }
+    }
+
+    .generating-text {
+      font-size: 17px;
+      color: #3D2B1A;
+      font-weight: 500;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .generating-hint {
+      font-size: 13px;
+      color: #9B8B7A;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  // ===== 预览区域 =====
+  .preview-area {
+    flex: 1;
     display: flex;
     justify-content: center;
-    padding: 16px 24px 24px;
+    align-items: flex-start;
+    padding: 8px 24px 20px;
+    overflow-y: auto;
+
+    .preview-img {
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(92, 74, 58, 0.22), 0 4px 12px rgba(92, 74, 58, 0.12);
+      max-width: calc(100vw - 48px);
+      width: 100%;
+      display: block;
+      // 进入动画
+      animation: fadeInScale 0.35s ease-out;
+    }
 
     canvas {
       border-radius: 16px;
@@ -43,21 +101,24 @@
     }
   }
 
+  // ===== 操作区 =====
   .action-bar {
-    padding: 8px 24px calc(24px + var(--safe-bottom, 0px));
+    padding: 12px 24px calc(28px + var(--safe-bottom, 0px));
     text-align: center;
+    background: linear-gradient(to top, rgba(240,235,224,0.95) 80%, transparent);
 
     .save-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 14px 56px;
+      padding: 14px 64px;
       background: linear-gradient(135deg, #8B6F4E, #6B4F2E);
       border-radius: 28px;
       margin-bottom: 12px;
-      min-height: 48px;
+      min-height: 50px;
       box-shadow: 0 4px 16px rgba(107, 79, 46, 0.35);
       transition: all 0.2s ease;
+      cursor: pointer;
 
       &:active {
         opacity: 0.85;
@@ -67,6 +128,7 @@
       &.disabled {
         background: #C4B8A8;
         box-shadow: none;
+        cursor: default;
       }
 
       &-text {
@@ -81,13 +143,38 @@
       display: block;
       font-size: 12px;
       color: #9B8B7A;
+      line-height: 1.5;
     }
   }
 }
 
+// ===== 动画 =====
+@keyframes inkBounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-14px);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// ===== 小屏适配 =====
 @media screen and (max-width: 350px) {
   .share-page {
-    .card-preview { padding: 12px 16px 20px; }
-    .action-bar .save-btn { padding: 12px 40px; }
+    .preview-area { padding: 8px 16px 16px; }
+    .action-bar .save-btn { padding: 12px 44px; }
   }
 }

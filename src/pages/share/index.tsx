@@ -1,15 +1,15 @@
 /**
- * 分享卡片页 v3.0
+ * 分享卡片页 v4.0
  *
- * v3.0 改进内容：
- * - 使用AI生成的水墨风格石头图片替代Canvas绘制的丑石头
- * - 修复连续天数bug：从URL参数正确读取streak
- * - 石头图片通过import引入，打包时自动处理路径
- * - 石头名称叠加在图片上方，水墨书法风格
+ * v4.0 改进内容：
+ * - 生成完成后先显示图片预览，用户确认后再保存
+ * - 预览界面：全屏展示卡片 + 保存/返回按钮
+ * - iOS：提示长按图片保存；Android/桌面：点击按钮直接下载
+ * - 生成过程中显示加载动画
  */
 import { useState, useEffect } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
-import { View, Text } from '@tarojs/components';
+import { View, Text, Image } from '@tarojs/components';
 import QRCode from 'qrcode';
 import './index.scss';
 
@@ -20,9 +20,13 @@ import stoneImg3 from '../../assets/stone-ink-3.png';
 
 const STONE_IMAGES = [stoneImg1, stoneImg2, stoneImg3];
 
+type Stage = 'generating' | 'preview';
+
 export default function SharePage() {
   const router = useRouter();
-  const [cardReady, setCardReady] = useState(false);
+  const [stage, setStage] = useState<Stage>('generating');
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [saving, setSaving] = useState(false);
 
   const type = router.params.type || 'quote';
   const text = decodeURIComponent(router.params.text || router.params.stoneName || router.params.stone || '');
@@ -32,13 +36,11 @@ export default function SharePage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       generateCard();
-    }, 400);
+    }, 300);
     return () => clearTimeout(timer);
   }, []);
 
-  /**
-   * 根据石头名称选择一张石头图片（确定性选择）
-   */
+  /** 根据石头名称确定性选择图片 */
   const getStoneImageIndex = (stoneName: string): number => {
     let hash = 0;
     for (let i = 0; i < stoneName.length; i++) {
@@ -48,9 +50,7 @@ export default function SharePage() {
     return Math.abs(hash) % STONE_IMAGES.length;
   };
 
-  /**
-   * 加载图片为Image对象
-   */
+  /** 加载图片为 HTMLImageElement */
   const loadImage = (src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -61,9 +61,7 @@ export default function SharePage() {
     });
   };
 
-  /**
-   * 生成分享卡片主函数
-   */
+  /** 生成分享卡片，完成后转为 dataURL 进入预览阶段 */
   const generateCard = async () => {
     if (typeof document === 'undefined') return;
 
@@ -82,7 +80,7 @@ export default function SharePage() {
     if (!ctx) return;
     ctx.scale(dpr, dpr);
 
-    // ===== 背景：暖米色渐变 =====
+    // 背景：暖米色渐变
     const bgGrad = ctx.createLinearGradient(0, 0, 0, cardHeight);
     bgGrad.addColorStop(0, '#F5F0E8');
     bgGrad.addColorStop(0.5, '#EDE8DE');
@@ -112,7 +110,15 @@ export default function SharePage() {
       await drawDailyCard(ctx, cardWidth, cardHeight);
     }
 
-    setCardReady(true);
+    // 转为 dataURL，进入预览阶段
+    try {
+      const dataUrl = canvas.toDataURL('image/png');
+      setPreviewUrl(dataUrl);
+      setStage('preview');
+    } catch (e) {
+      // 跨域图片可能导致 toDataURL 失败，直接进入预览（canvas可见）
+      setStage('preview');
+    }
   };
 
   /** 绘制金句分享卡片 */
@@ -150,33 +156,27 @@ export default function SharePage() {
     await drawBottomSection(ctx, w, h);
   };
 
-  /** 绘制今日一捞分享卡片 - 使用AI水墨石头图片 */
+  /** 绘制今日一捞分享卡片 */
   const drawDailyCard = async (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    // 日期
     ctx.fillStyle = '#9B8B7A';
     ctx.font = '12px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(new Date().toLocaleDateString('zh-CN'), w / 2, 48);
 
-    // 标题
     ctx.fillStyle = '#3D2B1A';
     ctx.font = '15px "Noto Serif SC", serif';
     ctx.textAlign = 'center';
     ctx.fillText('今日捞到一块石头', w / 2, 82);
 
-    // ===== 绘制水墨石头图片 =====
     const stoneText = text || '未知的石头';
     const imgIndex = getStoneImageIndex(stoneText);
     const imgSrc = STONE_IMAGES[imgIndex];
 
     try {
       const stoneImage = await loadImage(imgSrc);
-      // 石头图片尺寸和位置
       const stoneSize = 140;
       const stoneX = w / 2 - stoneSize / 2;
       const stoneY = 105;
-
-      // 绘制石头图片阴影
       ctx.shadowColor = 'rgba(0,0,0,0.15)';
       ctx.shadowBlur = 16;
       ctx.shadowOffsetX = 2;
@@ -184,14 +184,12 @@ export default function SharePage() {
       ctx.drawImage(stoneImage, stoneX, stoneY, stoneSize, stoneSize);
       ctx.shadowColor = 'transparent';
     } catch (e) {
-      // 图片加载失败时用简单椭圆代替
       ctx.fillStyle = '#8B7A6B';
       ctx.beginPath();
       ctx.ellipse(w / 2, 175, 60, 42, 0, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // 石头名称（在图片下方）
     ctx.fillStyle = '#3D2B1A';
     ctx.font = 'bold 18px "Noto Serif SC", serif';
     ctx.textAlign = 'center';
@@ -199,14 +197,12 @@ export default function SharePage() {
     const displayName = stoneText.length > 8 ? stoneText.slice(0, 7) + '…' : stoneText;
     ctx.fillText(`「${displayName}」`, w / 2, 268);
 
-    // 连续天数
     ctx.fillStyle = '#7A6B5A';
     ctx.font = '13px sans-serif';
     ctx.textAlign = 'center';
     const streakNum = parseInt(streak, 10) || 0;
     ctx.fillText(`已连续捞石头 ${streakNum} 天`, w / 2, 300);
 
-    // 底部分割线
     ctx.strokeStyle = 'rgba(139,111,78,0.25)';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -217,9 +213,7 @@ export default function SharePage() {
     await drawBottomSection(ctx, w, h);
   };
 
-  /**
-   * 绘制底部公共区域：品牌名 + 二维码 + 网址 + 说明
-   */
+  /** 绘制底部公共区域 */
   const drawBottomSection = async (ctx: CanvasRenderingContext2D, w: number, h: number) => {
     ctx.fillStyle = '#5C4A3A';
     ctx.font = '13px "Noto Serif SC", serif';
@@ -235,15 +229,10 @@ export default function SharePage() {
       await QRCode.toCanvas(qrCanvas, 'https://rxtxl.com', {
         width: 64,
         margin: 1,
-        color: {
-          dark: '#5C4A3A',
-          light: '#F5F0E8',
-        },
+        color: { dark: '#5C4A3A', light: '#F5F0E8' },
       });
       const qrSize = 52;
-      const qrX = w / 2 - qrSize / 2;
-      const qrY = h - 90;
-      ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+      ctx.drawImage(qrCanvas, w / 2 - qrSize / 2, h - 90, qrSize, qrSize);
     } catch (e) {
       console.error('二维码生成失败:', e);
     }
@@ -277,55 +266,113 @@ export default function SharePage() {
 
   /** 保存图片 */
   const handleSave = () => {
-    const canvas = document.getElementById('shareCanvas') as HTMLCanvasElement;
-    if (!canvas) return;
+    setSaving(true);
     try {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       if (isIOS) {
+        // iOS：提示长按预览图保存
         Taro.showModal({
           title: '保存图片',
-          content: '请长按下方卡片图片，选择"存储图像"即可保存到相册',
+          content: '请长按上方卡片图片，选择"存储图像"即可保存到相册',
           showCancel: false,
           confirmText: '我知道了',
         });
-      } else {
-        canvas.toBlob((blob) => {
-          if (!blob) { Taro.showToast({ title: '保存失败', icon: 'none' }); return; }
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.download = `人选天选论_${Date.now()}.png`;
-          link.href = url;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          Taro.showToast({ title: '已保存', icon: 'success' });
-        }, 'image/png');
+        setSaving(false);
+        return;
       }
+
+      // Android / 桌面：优先用 dataURL 下载
+      if (previewUrl) {
+        const link = document.createElement('a');
+        link.download = `人选天选论_${Date.now()}.png`;
+        link.href = previewUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        Taro.showToast({ title: '已保存', icon: 'success' });
+        setSaving(false);
+        return;
+      }
+
+      // 兜底：从 canvas 获取
+      const canvas = document.getElementById('shareCanvas') as HTMLCanvasElement;
+      if (!canvas) { setSaving(false); return; }
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          Taro.showToast({ title: '保存失败', icon: 'none' });
+          setSaving(false);
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `人选天选论_${Date.now()}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        Taro.showToast({ title: '已保存', icon: 'success' });
+        setSaving(false);
+      }, 'image/png');
     } catch (err) {
       Taro.showToast({ title: '请长按图片保存', icon: 'none' });
+      setSaving(false);
     }
   };
 
+  // ===== 生成中界面 =====
+  if (stage === 'generating') {
+    return (
+      <View className='share-page'>
+        {/* 隐藏的 canvas 用于绘制 */}
+        <canvas id='shareCanvas' style={{ position: 'fixed', left: '-9999px', top: '-9999px', width: '340px', height: '540px' }} />
+        <View className='generating-state'>
+          <View className='ink-spinner'>
+            <View className='ink-drop' />
+            <View className='ink-drop' />
+            <View className='ink-drop' />
+          </View>
+          <Text className='generating-text'>正在生成卡片...</Text>
+          <Text className='generating-hint'>片刻之间，墨迹成画</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // ===== 预览界面 =====
   return (
-    <View className='share-page'>
+    <View className='share-page share-page--preview'>
+      {/* 顶部导航 */}
       <View className='page-header'>
         <View className='nav-back' onClick={() => Taro.navigateBack()}>
-          <Text className='back-icon'>\u2190</Text>
+          <Text className='back-icon'>←</Text>
         </View>
         <Text className='page-title'>分享卡片</Text>
         <View className='placeholder' />
       </View>
 
-      <View className='card-preview'>
-        <canvas id='shareCanvas' style={{ width: '340px', height: '540px', borderRadius: '16px' }} />
+      {/* 预览区域 */}
+      <View className='preview-area'>
+        {previewUrl ? (
+          /* 用 img 标签展示，用户可长按保存（iOS） */
+          <img
+            src={previewUrl}
+            alt='分享卡片预览'
+            className='preview-img'
+            style={{ width: '100%', maxWidth: '340px', borderRadius: '16px', boxShadow: '0 12px 40px rgba(92,74,58,0.2), 0 4px 12px rgba(92,74,58,0.1)', display: 'block' }}
+          />
+        ) : (
+          /* toDataURL 失败时显示 canvas */
+          <canvas id='shareCanvas' style={{ width: '340px', height: '540px', borderRadius: '16px' }} />
+        )}
       </View>
 
+      {/* 操作区 */}
       <View className='action-bar'>
-        <View className={`save-btn ${!cardReady ? 'disabled' : ''}`} onClick={handleSave}>
-          <Text className='save-btn-text'>{cardReady ? '保存图片' : '生成中...'}</Text>
+        <View className={`save-btn ${saving ? 'disabled' : ''}`} onClick={!saving ? handleSave : undefined}>
+          <Text className='save-btn-text'>{saving ? '保存中...' : '保存图片'}</Text>
         </View>
-        <Text className='action-hint'>长按图片也可以保存</Text>
+        <Text className='action-hint'>iOS 用户可长按图片直接保存到相册</Text>
       </View>
     </View>
   );
