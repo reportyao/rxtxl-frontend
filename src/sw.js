@@ -4,7 +4,7 @@
  * v2: 升级缓存版本，清除旧缓存
  */
 
-const CACHE_NAME = 'rxtxl-v2';
+const CACHE_NAME = 'rxtxl-v3';
 const STATIC_ASSETS = [
   '/',
 ];

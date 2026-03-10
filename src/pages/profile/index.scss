@@ -294,6 +294,107 @@
       }
     }
   }
+  // 添加到桌面引导浮层
+  .add-home-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+    padding: 24px;
+  }
+
+  .add-home-card {
+    width: 100%;
+    max-width: 340px;
+    background: var(--color-bg);
+    border-radius: var(--radius-lg);
+    padding: 32px 24px 24px;
+    text-align: center;
+    animation: slideUpBounce 0.4s ease;
+
+    .add-home-icon {
+      margin-bottom: 16px;
+
+      .add-home-emoji {
+        font-size: 48px;
+      }
+    }
+
+    .add-home-title {
+      display: block;
+      font-family: var(--font-serif);
+      font-size: 18px;
+      color: var(--color-text);
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .add-home-desc {
+      display: block;
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .add-home-btn {
+      padding: 12px 0;
+      background-color: var(--color-primary);
+      border-radius: 24px;
+      margin-bottom: 16px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:active {
+        opacity: 0.85;
+        transform: scale(0.98);
+      }
+
+      &-text {
+        font-size: 15px;
+        color: #FFFFFF;
+        letter-spacing: 1px;
+        font-weight: 500;
+      }
+    }
+
+    .add-home-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .add-home-later, .add-home-never {
+      padding: 8px 4px;
+      cursor: pointer;
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+
+      &:active { opacity: 0.7; }
+    }
+
+    .add-home-later-text {
+      font-size: 13px;
+      color: var(--color-text-hint);
+    }
+
+    .add-home-never-text {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      text-decoration: underline;
+    }
+  }
 }
 
 // ===== 小屏适配 =====
@@ -312,4 +413,10 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes slideUpBounce {
+  0% { transform: translateY(40px); opacity: 0; }
+  60% { transform: translateY(-4px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
 }

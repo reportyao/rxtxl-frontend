@@ -181,6 +181,27 @@ export default function DiaryPage() {
     saveDraft(currentStep, answers, value);
   };
 
+  /** 返回上一步修改 */
+  const handlePrev = () => {
+    if (currentStep <= 0) return;
+    const prevStepIndex = currentStep - 1;
+    const prevStep = GUIDE_STEPS[prevStepIndex];
+    // 把当前输入保存到answers（如果有内容的话）
+    const step = GUIDE_STEPS[currentStep];
+    let newAnswers = { ...answers };
+    if (currentText.trim()) {
+      newAnswers[step.id] = currentText.trim();
+    }
+    // 从answers中取出上一步的回答，放回输入框
+    const prevAnswer = newAnswers[prevStep.id] || '';
+    // 从answers中删除上一步的回答（因为要重新编辑）
+    delete newAnswers[prevStep.id];
+    setAnswers(newAnswers);
+    setCurrentText(prevAnswer);
+    setCurrentStep(prevStepIndex);
+    saveDraft(prevStepIndex, newAnswers, prevAnswer);
+  };
+
   /** 点击"继续深潜"或"捞出石头" */
   const handleNext = () => {
     if (!currentText.trim()) {
@@ -429,14 +450,31 @@ export default function DiaryPage() {
       </View>
 
       <ScrollView className='diary-content' scrollY>
-        {/* 已回答的步骤（折叠显示） */}
+        {/* 已回答的步骤（折叠显示，点击可返回修改） */}
         {Object.entries(answers).map(([key, value], idx) => {
           const prevStep = GUIDE_STEPS[idx];
           if (!prevStep) return null;
           return (
-            <View key={key} className='answered-step'>
+            <View key={key} className='answered-step' onClick={() => {
+              // 点击已回答的步骤，跳回该步骤修改
+              const step = GUIDE_STEPS[currentStep];
+              let newAnswers = { ...answers };
+              if (currentText.trim()) {
+                newAnswers[step.id] = currentText.trim();
+              }
+              // 取出该步骤的回答放回输入框
+              const targetAnswer = newAnswers[prevStep.id] || '';
+              // 删除该步骤及之后的所有回答
+              const keysToRemove = GUIDE_STEPS.slice(idx).map(s => s.id);
+              keysToRemove.forEach(k => delete newAnswers[k]);
+              setAnswers(newAnswers);
+              setCurrentText(targetAnswer);
+              setCurrentStep(idx);
+              saveDraft(idx, newAnswers, targetAnswer);
+            }}>
               <Text className='answered-question'>{prevStep.question}</Text>
               <Text className='answered-text'>{value}</Text>
+              <Text className='answered-edit-hint'>点击修改</Text>
             </View>
           );
         })}
@@ -456,16 +494,23 @@ export default function DiaryPage() {
           />
           <View className='step-footer'>
             <Text className='char-count'>{currentText.length}/1000</Text>
-            <View
-              className={`next-btn ${!currentText.trim() ? 'disabled' : ''}`}
-              onClick={handleNext}
-            >
-              <Text className='next-btn-text'>
-                {currentStep === GUIDE_STEPS.length - 1
-                  ? (saving ? '保存中...' : '捞出石头')
-                  : '继续深潜 →'
-                }
-              </Text>
+            <View className='step-footer-btns'>
+              {currentStep > 0 && (
+                <View className='prev-btn' onClick={handlePrev}>
+                  <Text className='prev-btn-text'>← 上一步</Text>
+                </View>
+              )}
+              <View
+                className={`next-btn ${!currentText.trim() ? 'disabled' : ''}`}
+                onClick={handleNext}
+              >
+                <Text className='next-btn-text'>
+                  {currentStep === GUIDE_STEPS.length - 1
+                    ? (saving ? '保存中...' : '捞出石头')
+                    : '继续深潜 →'
+                  }
+                </Text>
+              </View>
             </View>
           </View>
         </View>

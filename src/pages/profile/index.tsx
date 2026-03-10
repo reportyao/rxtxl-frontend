@@ -23,6 +23,8 @@ export default function ProfilePage() {
   const deferredPromptRef = useRef<any>(null);
   const [totalDiaries, setTotalDiaries] = useState(0);
   const [totalStones, setTotalStones] = useState(0);
+  /** 添加到桌面引导浮层 */
+  const [showAddToHome, setShowAddToHome] = useState(false);
 
   /** 监听PWA安装提示事件 */
   useEffect(() => {
@@ -40,6 +42,59 @@ export default function ProfilePage() {
     };
   }, []);
 
+  /** 检查是否需要显示添加到桌面引导 */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    // 如果已经是PWA standalone模式，不提礼
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || (window.navigator as any).standalone === true;
+    if (isStandalone) return;
+    // 检查本月是否已经点击过"不再提醒"
+    const now = new Date();
+    const dismissKey = `addToHome_dismiss_${now.getFullYear()}_${now.getMonth()}`;
+    const dismissed = localStorage.getItem(dismissKey);
+    if (dismissed) return;
+    // 延迟800ms后显示，避免页面刚加载就弹出
+    const timer = setTimeout(() => setShowAddToHome(true), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  /** 关闭添加到桌面浮层 */
+  const handleDismissAddToHome = (noRemind: boolean) => {
+    setShowAddToHome(false);
+    if (noRemind) {
+      const now = new Date();
+      const dismissKey = `addToHome_dismiss_${now.getFullYear()}_${now.getMonth()}`;
+      localStorage.setItem(dismissKey, '1');
+    }
+  };
+
+  /** 浮层中点击添加到桌面 */
+  const handleAddToHomeFromBanner = () => {
+    setShowAddToHome(false);
+    if (deferredPromptRef.current) {
+      deferredPromptRef.current.prompt();
+      deferredPromptRef.current.userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          Taro.showToast({ title: '添加成功', icon: 'success' });
+        }
+        deferredPromptRef.current = null;
+      });
+    } else {
+      const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isWechat = typeof navigator !== 'undefined' && /MicroMessenger/i.test(navigator.userAgent);
+      let content = '';
+      if (isWechat) {
+        content = '微信内无法直接添加到桌面。\n\n请点击右上角「···」→ 选择「在浏览器中打开」，然后在浏览器中添加到主屏幕。';
+      } else if (isIOS) {
+        content = '请点击 Safari 底部的分享按钮（方框+箭头图标），然后选择「添加到主屏幕」即可。';
+      } else {
+        content = '请点击浏览器右上角菜单（三个点），然后选择「添加到主屏幕」或「安装应用」即可。';
+      }
+      Taro.showModal({ title: '添加到桌面', content, showCancel: false, confirmText: '知道了' });
+    }
+  };
+
   /** 每次页面显示时刷新统计数据 */
   useDidShow(() => {
     fetchStats();
@@ -55,7 +110,8 @@ export default function ProfilePage() {
 
       if (checkinsRes.code === 0) {
         setStreakDays(checkinsRes.data.currentStreak || 0);
-        setTotalDiaries(checkinsRes.data.totalCheckins || 0);
+        // 使用totalDiaries（日记总条数）而不totalCheckins（打卡天数）
+        setTotalDiaries(checkinsRes.data.totalDiaries || checkinsRes.data.totalCheckins || 0);
       }
 
       if (stonesRes.code === 0) {
@@ -316,6 +372,30 @@ export default function ProfilePage() {
       <View className='version-info'>
         <Text className='version-text'>人选天选论 v1.0.0</Text>
       </View>
+
+      {/* 添加到桌面引导浮层 */}
+      {showAddToHome && (
+        <View className='add-home-overlay' onClick={() => handleDismissAddToHome(false)}>
+          <View className='add-home-card' onClick={(e) => e.stopPropagation()}>
+            <View className='add-home-icon'>
+              <Text className='add-home-emoji'>📲</Text>
+            </View>
+            <Text className='add-home-title'>添加到桌面，随时捞石头</Text>
+            <Text className='add-home-desc'>把「人选天选论」添加到手机桌面，像原生App一样便捷使用，随时记录你的道痕。</Text>
+            <View className='add-home-btn' onClick={handleAddToHomeFromBanner}>
+              <Text className='add-home-btn-text'>立即添加</Text>
+            </View>
+            <View className='add-home-actions'>
+              <View className='add-home-later' onClick={() => handleDismissAddToHome(false)}>
+                <Text className='add-home-later-text'>下次再说</Text>
+              </View>
+              <View className='add-home-never' onClick={() => handleDismissAddToHome(true)}>
+                <Text className='add-home-never-text'>本月不再提醒</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
