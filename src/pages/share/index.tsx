@@ -18,7 +18,7 @@ export default function SharePage() {
   const [cardReady, setCardReady] = useState(false);
 
   const type = router.params.type || 'quote';
-  const text = decodeURIComponent(router.params.text || router.params.stone || '');
+  const text = decodeURIComponent(router.params.text || router.params.stoneName || router.params.stone || '');
   const chapter = router.params.chapter || '';
   const streak = router.params.streak || '0';
 
