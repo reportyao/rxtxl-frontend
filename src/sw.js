@@ -1,14 +1,12 @@
 /**
  * Service Worker - 人选天选论 PWA
  * 提供基础的离线缓存能力
+ * v2: 升级缓存版本，清除旧缓存
  */
 
-const CACHE_NAME = 'rxtxl-v1';
+const CACHE_NAME = 'rxtxl-v2';
 const STATIC_ASSETS = [
   '/',
-  '/js/app.js',
-  '/js/278.js',
-  '/css/app.css',
 ];
 
 // 安装时缓存静态资源
@@ -36,7 +34,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 网络优先策略
+// 网络优先策略（始终从网络获取最新内容）
 self.addEventListener('fetch', (event) => {
   // 只处理 GET 请求
   if (event.request.method !== 'GET') return;
