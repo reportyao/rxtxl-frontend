@@ -264,16 +264,25 @@ export default function SharePage() {
     return lines;
   };
 
+  /** 检测iOS设备（兼容iPad OS 13+） */
+  const isIOSDevice = (): boolean => {
+    const ua = navigator.userAgent;
+    // iPhone / iPod / 旧版iPad
+    if (/iPad|iPhone|iPod/.test(ua)) return true;
+    // iPad OS 13+ 会伪装成 Mac，通过触屏检测区分
+    if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return true;
+    return false;
+  };
+
   /** 保存图片 */
   const handleSave = () => {
     setSaving(true);
     try {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS) {
-        // iOS：提示长按预览图保存
+      if (isIOSDevice()) {
+        // iOS / iPadOS：提示长按预览图保存
         Taro.showModal({
           title: '保存图片',
-          content: '请长按上方卡片图片，选择"存储图像"即可保存到相册',
+          content: '请长按上方卡片图片，选择“存储图像”即可保存到相册',
           showCancel: false,
           confirmText: '我知道了',
         });

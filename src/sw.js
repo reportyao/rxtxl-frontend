@@ -1,10 +1,10 @@
 /**
  * Service Worker - 人选天选论 PWA
  * 提供基础的离线缓存能力
- * v2: 升级缓存版本，清除旧缓存
+ * v4: 深度修复和浏览器适配优化
  */
 
-const CACHE_NAME = 'rxtxl-v3';
+const CACHE_NAME = 'rxtxl-v4';
 const STATIC_ASSETS = [
   '/',
 ];

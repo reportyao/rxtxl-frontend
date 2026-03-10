@@ -4,9 +4,9 @@
  * v2: 升级缓存版本，改为网络优先策略，确保用户始终获取最新内容
  */
 
-const CACHE_NAME = 'rxtxl-v3';
-const STATIC_CACHE = 'rxtxl-static-v3';
-const API_CACHE = 'rxtxl-api-v3';
+const CACHE_NAME = 'rxtxl-v4';
+const STATIC_CACHE = 'rxtxl-static-v4';
+const API_CACHE = 'rxtxl-api-v4';
 
 // 需要预缓存的静态资源（只缓存首页，其余网络优先）
 const PRECACHE_URLS = [

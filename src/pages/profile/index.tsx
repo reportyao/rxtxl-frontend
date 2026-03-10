@@ -16,6 +16,22 @@ import { api } from '../../utils/request';
 import { useAppStore } from '../../store';
 import './index.scss';
 
+/** 检测iOS/iPadOS设备（兼容iPad OS 13+伪装Mac的UA） */
+const isIOSDevice = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  // iPad OS 13+ 会伪装成 Macintosh，通过触屏检测区分
+  if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return true;
+  return false;
+};
+
+/** 检测微信浏览器 */
+const isWechatBrowser = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  return /MicroMessenger/i.test(navigator.userAgent);
+};
+
 export default function ProfilePage() {
   const { user, logout } = useAppStore();
   const [streakDays, setStreakDays] = useState(0);
@@ -81,17 +97,20 @@ export default function ProfilePage() {
         deferredPromptRef.current = null;
       });
     } else {
-      const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isWechat = typeof navigator !== 'undefined' && /MicroMessenger/i.test(navigator.userAgent);
       let content = '';
-      if (isWechat) {
+      if (isWechatBrowser()) {
         content = '微信内无法直接添加到桌面。\n\n请点击右上角「···」→ 选择「在浏览器中打开」，然后在浏览器中添加到主屏幕。';
-      } else if (isIOS) {
+      } else if (isIOSDevice()) {
         content = '请点击 Safari 底部的分享按钮（方框+箭头图标），然后选择「添加到主屏幕」即可。';
       } else {
         content = '请点击浏览器右上角菜单（三个点），然后选择「添加到主屏幕」或「安装应用」即可。';
       }
-      Taro.showModal({ title: '添加到桌面', content, showCancel: false, confirmText: '知道了' });
+      Taro.showModal({
+        title: '添加到桌面',
+        content,
+        showCancel: false,
+        confirmText: '知道了',
+      });
     }
   };
 
@@ -237,12 +256,10 @@ export default function ProfilePage() {
           });
         } else {
           // 不支持PWA安装API时，显示手动操作指引
-          const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-          const isWechat = typeof navigator !== 'undefined' && /MicroMessenger/i.test(navigator.userAgent);
           let content = '';
-          if (isWechat) {
+          if (isWechatBrowser()) {
             content = '微信内无法直接添加到桌面。\n\n请点击右上角「···」→ 选择「在浏览器中打开」，然后在浏览器中添加到主屏幕。';
-          } else if (isIOS) {
+          } else if (isIOSDevice()) {
             content = '请点击 Safari 底部的分享按钮（方框+箭头图标），然后选择「添加到主屏幕」即可。';
           } else {
             content = '请点击浏览器右上角菜单（三个点），然后选择「添加到主屏幕」或「安装应用」即可。';

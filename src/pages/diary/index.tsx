@@ -192,10 +192,8 @@ export default function DiaryPage() {
     if (currentText.trim()) {
       newAnswers[step.id] = currentText.trim();
     }
-    // 从answers中取出上一步的回答，放回输入框
+    // 从answers中取出上一步的回答，放回输入框（保留在answers中，不删除）
     const prevAnswer = newAnswers[prevStep.id] || '';
-    // 从answers中删除上一步的回答（因为要重新编辑）
-    delete newAnswers[prevStep.id];
     setAnswers(newAnswers);
     setCurrentText(prevAnswer);
     setCurrentStep(prevStepIndex);
@@ -212,15 +210,18 @@ export default function DiaryPage() {
     const step = GUIDE_STEPS[currentStep];
     const newAnswers = { ...answers, [step.id]: currentText.trim() };
     setAnswers(newAnswers);
-    setCurrentText('');
 
     if (currentStep < GUIDE_STEPS.length - 1) {
-      // 还有下一步
+      // 还有下一步：如果下一步已有回答（用户回退后再前进），恢复到输入框
       const nextStep = currentStep + 1;
+      const nextStepId = GUIDE_STEPS[nextStep].id;
+      const existingAnswer = newAnswers[nextStepId] || '';
+      setCurrentText(existingAnswer);
       setCurrentStep(nextStep);
-      saveDraft(nextStep, newAnswers, '');
+      saveDraft(nextStep, newAnswers, existingAnswer);
     } else {
       // 完成所有步骤，保存日记
+      setCurrentText('');
       handleSave(newAnswers);
     }
   };
@@ -451,12 +452,12 @@ export default function DiaryPage() {
 
       <ScrollView className='diary-content' scrollY>
         {/* 已回答的步骤（折叠显示，点击可返回修改） */}
-        {Object.entries(answers).map(([key, value], idx) => {
-          const prevStep = GUIDE_STEPS[idx];
-          if (!prevStep) return null;
+        {GUIDE_STEPS.slice(0, currentStep).map((prevStep, idx) => {
+          const answer = answers[prevStep.id];
+          if (!answer) return null;
           return (
-            <View key={key} className='answered-step' onClick={() => {
-              // 点击已回答的步骤，跳回该步骤修改
+            <View key={prevStep.id} className='answered-step' onClick={() => {
+              // 点击已回答的步骤，跳回该步骤修改（保留所有回答）
               const step = GUIDE_STEPS[currentStep];
               let newAnswers = { ...answers };
               if (currentText.trim()) {
@@ -464,16 +465,13 @@ export default function DiaryPage() {
               }
               // 取出该步骤的回答放回输入框
               const targetAnswer = newAnswers[prevStep.id] || '';
-              // 删除该步骤及之后的所有回答
-              const keysToRemove = GUIDE_STEPS.slice(idx).map(s => s.id);
-              keysToRemove.forEach(k => delete newAnswers[k]);
               setAnswers(newAnswers);
               setCurrentText(targetAnswer);
               setCurrentStep(idx);
               saveDraft(idx, newAnswers, targetAnswer);
             }}>
               <Text className='answered-question'>{prevStep.question}</Text>
-              <Text className='answered-text'>{value}</Text>
+              <Text className='answered-text'>{answer}</Text>
               <Text className='answered-edit-hint'>点击修改</Text>
             </View>
           );
